@@ -44,7 +44,10 @@ def run_mock_agent():
     for action, reason, amount in decisions:
         print(f"\nSubmitting decision: {action}")
         
-        tx = contract.functions.logDecision(action, reason, amount).build_transaction({
+        # Mocking an explanation hash or text for the 4th parameter `_explanationHash` expected by the contract
+        dummy_explanation_hash = "QmDummyHash" + str(amount)
+        
+        tx = contract.functions.logDecision(action, reason, amount, dummy_explanation_hash).build_transaction({
             'from': account.address,
             'nonce': nonce,
             'gas': 500000,

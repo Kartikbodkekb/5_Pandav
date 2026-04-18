@@ -7,7 +7,7 @@ class AIExplainer:
     def __init__(self):
         try:
             self.llm = ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash",
+                model="gemini-2.5-flash-lite",
                 google_api_key=settings.GOOGLE_API_KEY,
                 temperature=0.3
             )
@@ -111,5 +111,79 @@ SHOULD YOU CHALLENGE:
         for d in decisions:
             results.append(self.explain_decision(d))
         return results
+
+    def explain_intent(self, intent: dict) -> dict:
+        if not self.llm:
+            return {
+                "explanation": "AI explanation unavailable",
+                "risk_score": 5,
+                "model_used": "None"
+            }
+            
+        prompt_template = """
+You are a financial risk auditor assessing an autonomous AI agent's proposed intent BEFORE it interacts with a blockchain network.
+
+The agent wants to execute the following intent:
+- Action: {action}
+- Stated Reason: {reason}  
+- Amount: {amount} tokens
+
+Act as a financial auditor. Explain why this agent is moving funds. Is this a typical rebalancing or a high-risk anomaly?
+Calculate a Risk Score (1-10, where 1 is safest and 10 is highest risk) based on perceived slippage, contract reputation, and liquidity risks based on the reason provided.
+
+Provide a structured analysis with exactly these 2 sections:
+
+EXPLANATION:
+(2-3 sentences explaining your assessment of why the agent is moving funds and whether it's a typical rebalancing or high-risk anomaly)
+
+RISK SCORE:
+(Just a single integer from 1 to 10)
+"""
+        try:
+            prompt = ChatPromptTemplate.from_template(prompt_template)
+            chain = prompt | self.llm | StrOutputParser()
+            
+            response = chain.invoke({
+                "action": intent.get("action", "Unknown"),
+                "reason": intent.get("reason", "No reason provided"),
+                "amount": intent.get("amount", 0)
+            })
+            
+            explanation = ""
+            risk_score = 5
+            
+            lines = response.split('\n')
+            current_section = None
+            for line in lines:
+                line_stripped = line.strip()
+                if "EXPLANATION:" in line_stripped:
+                    current_section = "explanation"
+                    continue
+                elif "RISK SCORE:" in line_stripped:
+                    current_section = "score"
+                    continue
+                
+                if current_section == "explanation" and line_stripped:
+                    explanation += line_stripped + " "
+                elif current_section == "score" and line_stripped:
+                    try:
+                        import re
+                        digits = re.findall(r'\d+', line_stripped)
+                        if digits:
+                            risk_score = int(digits[0])
+                    except:
+                        pass
+                        
+            return {
+                "explanation": explanation.strip() or response,
+                "risk_score": risk_score,
+                "model_used": "gemini-1.5-flash via LangChain"
+            }
+        except Exception as e:
+            return {
+                "explanation": "AI Error: " + str(e),
+                "risk_score": 5,
+                "model_used": "gemini-1.5-flash via LangChain"
+            }
 
 ai_explainer = AIExplainer()

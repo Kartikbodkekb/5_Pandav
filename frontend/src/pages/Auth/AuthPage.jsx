@@ -37,10 +37,10 @@ export default function AuthPage({ defaultMode = 'login' }) {
       if (mode === 'signup') {
         await createUserWithEmailAndPassword(auth, email, password);
         // Normally you'd update profile with name here, but keeping it simple
-        navigate('/');
+        navigate('/dashboard');
       } else {
         await signInWithEmailAndPassword(auth, email, password);
-        navigate('/');
+        navigate('/dashboard');
       }
     } catch (err) {
       console.error(err);
@@ -54,7 +54,7 @@ export default function AuthPage({ defaultMode = 'login' }) {
     setError(null);
     try {
       await signInWithPopup(auth, googleProvider);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
        setError(err.message.replace('Firebase: ', ''));
     }
