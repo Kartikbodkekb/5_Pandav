@@ -70,6 +70,25 @@
   {
     "inputs": [
       {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "agentReputations",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "",
+        "type": "int256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_id",
         "type": "uint256"
@@ -128,6 +147,11 @@
             "type": "address"
           },
           {
+            "internalType": "string",
+            "name": "agentName",
+            "type": "string"
+          },
+          {
             "internalType": "uint8",
             "name": "status",
             "type": "uint8"
@@ -141,6 +165,25 @@
         "internalType": "struct AgentAuditLogger.Decision",
         "name": "",
         "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_agentName",
+        "type": "string"
+      }
+    ],
+    "name": "getReputation",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "",
+        "type": "int256"
       }
     ],
     "stateMutability": "view",
@@ -161,6 +204,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "string",
+        "name": "_agentName",
+        "type": "string"
+      },
       {
         "internalType": "string",
         "name": "_action",

@@ -135,8 +135,10 @@ def challenge_decision_endpoint(id: int, req: ChallengeRequest):
             else:
                 raise HTTPException(status_code=400, detail=f"Decision not challengeable. Status is {decision.get('status_label')}")
                 
-        # Access abi directly if possible, else return list placeholder
-        abi = blockchain_service.contract.abi if hasattr(blockchain_service, 'contract') else []
+        # Access abi directly from disk to prevent Web3.py serialization errors
+        import json
+        with open("abi.json", "r") as f:
+            abi = json.load(f)
         
         return {
             "challengeable": True,
@@ -178,12 +180,13 @@ class MockAgentRequest(BaseModel):
     action: str
     reason: str
     amount: int
+    agent_name: str = "Test-Agent"
     explanation_hash: str = ""
 
 @app.post("/agent/trigger")
 def trigger_agent(req: MockAgentRequest):
     try:
-        tx_hash = blockchain_service.log_decision(req.action, req.reason, req.amount, req.explanation_hash, settings.PRIVATE_KEY)
+        tx_hash = blockchain_service.log_decision(req.agent_name, req.action, req.reason, req.amount, req.explanation_hash, settings.PRIVATE_KEY)
         return {
             "success": True,
             "tx_hash": tx_hash,
@@ -251,7 +254,9 @@ def verify_intent(req: VerifyIntentRequest):
     try:
         # Trigger the actual execution on the HeLa blockchain!
         explanation_hash = intent.get("explanation", "")[:32] # Mock hash
+        agent_name = intent.get("agent_name", "Command-Center")
         tx_hash = blockchain_service.log_decision(
+            agent_name=agent_name,
             action=intent["action"],
             reason=intent["reason"],
             amount=intent["amount"],
@@ -360,7 +365,7 @@ async def _run_single_agent(agent_name: str, profile: dict) -> dict:
             explanation_hash = explanation[:32] if explanation else agent_name
             tx_hash = await asyncio.to_thread(
                 blockchain_service.log_decision,
-                action, f"[{agent_name}] {reason}", amount, explanation_hash, settings.PRIVATE_KEY
+                agent_name, action, f"[{agent_name}] {reason}", amount, explanation_hash, settings.PRIVATE_KEY
             )
             result.update({
                 "status": "auto_executed",
@@ -437,3 +442,17 @@ def get_agent_profiles():
         ],
         "auto_execute_threshold": AUTO_EXECUTE_THRESHOLD
     }
+
+@app.get("/reputation")
+def get_agent_reputations():
+    reputs = {}
+    for name in AGENT_PROFILES.keys():
+        try:
+            r = blockchain_service.contract.functions.getReputation(name).call()
+            reputs[name] = r
+        except Exception:
+            reputs[name] = 100
+    
+    ls = [{"name": k, "reputation": v} for k, v in reputs.items()]
+    ls.sort(key=lambda x: x["reputation"], reverse=True)
+    return {"leaderboard": ls}

@@ -51,28 +51,29 @@ const DisputeCenter = () => {
     const { address, provider } = useWeb3Context();
     const [governanceRole, setGovernanceRole] = useState(null);
 
-    useEffect(() => {
-        const fetchDecisions = async () => {
-            try {
-                setLoading(true);
-                const govRes = await fetch('http://127.0.0.1:8000/governance');
-                if (govRes.ok) {
-                    const govData = await govRes.json();
-                    setGovernanceRole(govData.governanceRole);
-                }
-
-                const res = await fetch('http://127.0.0.1:8000/decisions');
-                const data = await res.json();
-                if (data && data.decisions) {
-                    const pending = data.decisions.filter(d => d.status === 0);
-                    setChallenges(pending);
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
+    const fetchDecisions = async () => {
+        try {
+            setLoading(true);
+            const govRes = await fetch('http://127.0.0.1:8000/governance');
+            if (govRes.ok) {
+                const govData = await govRes.json();
+                setGovernanceRole(govData.governanceRole);
             }
-        };
+
+            const res = await fetch('http://127.0.0.1:8000/decisions');
+            const data = await res.json();
+            if (data && data.decisions) {
+                const pending = data.decisions.filter(d => d.status === 0);
+                setChallenges(pending);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchDecisions();
     }, []);
 

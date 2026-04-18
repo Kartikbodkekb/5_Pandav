@@ -17,9 +17,17 @@ const getRiskColor = (score) => {
 const AgentSandbox = () => {
     const navigate = useNavigate();
     const [profiles, setProfiles] = useState([]);
+    const [reputations, setReputations] = useState([]);
     const [isRunning, setIsRunning] = useState(false);
     const [results, setResults] = useState(null);
     const [error, setError] = useState(null);
+
+    const fetchReputation = () => {
+        fetch('http://localhost:8000/reputation')
+            .then(r => r.json())
+            .then(data => setReputations(data.leaderboard || []))
+            .catch(console.error);
+    };
 
     // Load agent profiles on mount
     useEffect(() => {
@@ -27,6 +35,8 @@ const AgentSandbox = () => {
             .then(r => r.json())
             .then(data => setProfiles(data.agents || []))
             .catch(console.error);
+            
+        fetchReputation();
     }, []);
 
     const handleRunAgents = async () => {
@@ -38,6 +48,7 @@ const AgentSandbox = () => {
             if (!res.ok) throw new Error(`Server error: ${res.status}`);
             const data = await res.json();
             setResults(data);
+            fetchReputation(); // Refresh reputation after runs
         } catch (err) {
             setError(err.message);
         } finally {
@@ -71,6 +82,19 @@ const AgentSandbox = () => {
                             {agent.description}
                         </p>
                         <span style={{ color: '#6b7280', fontSize: '0.78rem' }}>{agent.decision_count} possible decisions</span>
+                        {/* Inline Reputation UI */}
+                        {reputations.find(r => r.name === agent.name) && (
+                            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: '#a0a0a0', fontSize: '0.78rem' }}>On-Chain Reputation</span>
+                                <span style={{ 
+                                    fontWeight: 'bold', 
+                                    color: reputations.find(r => r.name === agent.name).reputation >= 100 ? '#4ade80' : 
+                                           reputations.find(r => r.name === agent.name).reputation >= 50 ? '#f59e0b' : '#ef4444' 
+                                }}>
+                                    {reputations.find(r => r.name === agent.name).reputation} pts
+                                </span>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
