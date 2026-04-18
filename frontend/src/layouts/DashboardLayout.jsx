@@ -1,16 +1,36 @@
 import React, { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { auth } from '../../firebase';
 import { signOut } from 'firebase/auth';
 import { useWeb3Modal, useWeb3ModalAccount, useDisconnect } from '@web3modal/ethers/react';
+import { ShieldCheck, Zap, Scroll, Scale, FlaskConical, Menu, X, LogOut, ChevronDown, Copy } from 'lucide-react';
+import { useToast } from '../components/Toast';
 import './DashboardLayout.css';
 
-const DashboardLayout = () => {
+const navItems = [
+  { href: "/dashboard", label: "Command Center", icon: Zap, exact: true },
+  { href: "/dashboard/history", label: "Audit History", icon: Scroll },
+  { href: "/dashboard/disputes", label: "Dispute Center", icon: Scale },
+  { href: "/dashboard/sandbox", label: "Agent Sandbox", icon: FlaskConical },
+];
+
+const routeTitles = {
+  "/dashboard": "Command Center",
+  "/dashboard/history": "Audit History",
+  "/dashboard/disputes": "Dispute Center",
+  "/dashboard/sandbox": "Agent Sandbox",
+  "/dashboard/settings": "Settings",
+};
+
+export default function DashboardLayout() {
   const { open } = useWeb3Modal();
   const { address, isConnected } = useWeb3ModalAccount();
   const { disconnect } = useDisconnect();
+  const toast = useToast();
   
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isWalletDropdownOpen, setWalletDropdownOpen] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -19,7 +39,15 @@ const DashboardLayout = () => {
       if (isConnected) disconnect();
       navigate('/');
     } catch (err) {
-      console.error("Logout error", err);
+      toast.error("Logout failed", err.message);
+    }
+  };
+
+  const handleCopyAddress = () => {
+    if (address) {
+      navigator.clipboard.writeText(address);
+      toast.info("Address copied", "Wallet address copied to clipboard");
+      setWalletDropdownOpen(false);
     }
   };
 
@@ -28,69 +56,162 @@ const DashboardLayout = () => {
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
 
+  const pageTitle = routeTitles[location.pathname] || "Dashboard";
+
   return (
-    <div className="dashboard-layout">
-      {/* Sidebar Navigation */}
-      <aside className={`dashboard-sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-logo">
-          <h2>Agentic Protocol</h2>
+    <div className="dashboard-shell">
+      {/* Ambient grid backdrop */}
+      <div aria-hidden="true" className="dashboard-bg-grid bg-grid" />
+
+      <div className="dashboard-layout-inner">
+        {/* Sidebar Desktop */}
+        <aside className="dashboard-sidebar glass-strong">
+          <div className="sidebar-header">
+            <div className="sidebar-logo-container">
+              <div className="sidebar-logo-icon bg-gradient-brand">
+                <ShieldCheck className="text-white" size={20} strokeWidth={2.5} />
+              </div>
+              <div className="sidebar-logo-text">
+                <span className="logo-title">TAAP</span>
+                <span className="logo-subtitle">Guardian Protocol</span>
+              </div>
+            </div>
+          </div>
+
+          <nav className="sidebar-nav">
+            <ul className="sidebar-nav-list">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.href}>
+                    <NavLink
+                      to={item.href}
+                      end={item.exact}
+                      className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active bg-gradient-brand-soft' : ''}`}
+                    >
+                      <Icon className="nav-icon" size={18} strokeWidth={2} />
+                      <span className="nav-label">{item.label}</span>
+                    </NavLink>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          <div className="sidebar-footer">
+            <div className="sidebar-status glass">
+              <span className="pulse-dot-wrapper">
+                <span className="pulse-dot-ping bg-success" />
+                <span className="pulse-dot bg-success" />
+              </span>
+              <span className="status-network">HeLa</span>
+              <span className="status-divider">·</span>
+              <span className="status-live text-success">Live</span>
+            </div>
+          </div>
+        </aside>
+
+        {/* Mobile Navigation Drawer */}
+        {isSidebarOpen && (
+          <div className="mobile-nav-overlay">
+            <div className="mobile-nav-backdrop" onClick={() => setSidebarOpen(false)} />
+            <div className="mobile-nav-drawer glass-strong">
+              <div className="mobile-drawer-header">
+                <div className="sidebar-logo-container">
+                  <div className="sidebar-logo-icon bg-gradient-brand">
+                    <ShieldCheck className="text-white" size={20} strokeWidth={2.5} />
+                  </div>
+                  <div className="sidebar-logo-text">
+                    <span className="logo-title">TAAP</span>
+                    <span className="logo-subtitle">Guardian Protocol</span>
+                  </div>
+                </div>
+                <button className="mobile-close-btn" onClick={() => setSidebarOpen(false)}>
+                  <X size={16} />
+                </button>
+              </div>
+              <nav className="mobile-drawer-nav">
+                <ul className="sidebar-nav-list">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <li key={item.href}>
+                        <NavLink
+                          to={item.href}
+                          end={item.exact}
+                          onClick={() => setSidebarOpen(false)}
+                          className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active bg-gradient-brand-soft' : ''}`}
+                        >
+                          <Icon className="nav-icon" size={18} strokeWidth={2} />
+                          <span className="nav-label">{item.label}</span>
+                        </NavLink>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        <div className="dashboard-main">
+          {/* Top Header */}
+          <header className="dashboard-top-nav glass">
+            <div className="top-nav-inner">
+              <div className="top-nav-left">
+                <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
+                  <Menu size={16} />
+                </button>
+                <h1 className="top-nav-title">{pageTitle}</h1>
+              </div>
+
+              <div className="top-nav-right">
+                <div className="wallet-container">
+                  {isConnected ? (
+                    <div className="wallet-connected-wrapper">
+                      <button
+                        className="wallet-btn connected hover-lift"
+                        onClick={() => setWalletDropdownOpen(!isWalletDropdownOpen)}
+                      >
+                        <span className="wallet-dot bg-success" />
+                        <span className="wallet-address">{formatAddress(address)}</span>
+                        <ChevronDown size={14} className="wallet-chevron" />
+                      </button>
+                      
+                      {isWalletDropdownOpen && (
+                        <div className="wallet-dropdown glass-strong">
+                          <button className="wallet-dropdown-item" onClick={handleCopyAddress}>
+                            <Copy size={14} />
+                            Copy Address
+                          </button>
+                          <div className="wallet-dropdown-divider" />
+                          <button className="wallet-dropdown-item" onClick={() => { disconnect(); setWalletDropdownOpen(false); }}>
+                            <LogOut size={14} />
+                            Disconnect
+                          </button>
+                          <button className="wallet-dropdown-item text-destructive" onClick={handleLogout}>
+                            <LogOut size={14} />
+                            Logout Session
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button className="wallet-btn connect-btn hover-lift" onClick={() => open()}>
+                      Connect Wallet
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="dashboard-content-area">
+            <Outlet />
+          </main>
         </div>
-        <nav className="sidebar-nav">
-          <NavLink to="/dashboard" end className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-            <span className="icon">⚡</span>
-            Command Center
-          </NavLink>
-          <NavLink to="/dashboard/history" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-            <span className="icon">📜</span>
-            Audit History
-          </NavLink>
-          <NavLink to="/dashboard/disputes" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-            <span className="icon">⚖️</span>
-            Dispute Center
-          </NavLink>
-          <NavLink to="/dashboard/sandbox" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-            <span className="icon">🧪</span>
-            Agent Sandbox
-          </NavLink>
-        </nav>
-      </aside>
-
-      {/* Main Content Area */}
-      <div className="dashboard-main">
-        {/* Top Header */}
-        <header className="dashboard-header">
-          <div className="header-left">
-            <button className="mobile-menu-btn" onClick={() => setSidebarOpen(!isSidebarOpen)}>
-              ☰
-            </button>
-            <h1>Dashboard Suite</h1>
-          </div>
-          <div className="header-right">
-             <button
-                onClick={() => open()}
-                className={`wallet-btn ${isConnected ? 'connected' : ''}`}
-            >
-                {isConnected ? formatAddress(address) : 'Connect Wallet'}
-            </button>
-            <button
-                onClick={handleLogout}
-                style={{ marginLeft: '12px', padding: '0.6rem 1.2rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-            >
-                Logout
-            </button>
-          </div>
-        </header>
-
-        {/* Content Outlet for nested routes */}
-        <main className="dashboard-content">
-          <Outlet />
-        </main>
       </div>
-
-      {/* Mobile Overlay */}
-      {isSidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>}
     </div>
   );
-};
-
-export default DashboardLayout;
+}
