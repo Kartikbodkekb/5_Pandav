@@ -7,7 +7,7 @@ class AIExplainer:
     def __init__(self):
         try:
             self.llm = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash-lite",  # Supported model, but subject to 20 RPM limit
+                model="gemini-2.5-flash",
                 google_api_key=settings.GOOGLE_API_KEY,
                 temperature=0.3
             )
@@ -43,8 +43,8 @@ Provide a structured analysis with exactly these 3 sections:
 PLAIN ENGLISH SUMMARY:
 (1-2 sentences explaining what the agent did in simple terms anyone can understand)
 
-RISK ASSESSMENT:
-(1-2 sentences identifying any potential risks or red flags in this decision)
+RISK SCORE:
+(Just a single integer from 1 to 10 assessing the risk of this transaction)
 
 SHOULD YOU CHALLENGE:
 (Yes/No and a one-sentence reason why or why not)
@@ -62,7 +62,7 @@ SHOULD YOU CHALLENGE:
             })
             
             summary = ""
-            risk = ""
+            risk = 5
             should_challenge_raw = ""
             
             # Simple parsing
@@ -73,7 +73,7 @@ SHOULD YOU CHALLENGE:
                 if "PLAIN ENGLISH SUMMARY:" in line_stripped:
                     current_section = "summary"
                     continue
-                elif "RISK ASSESSMENT:" in line_stripped:
+                elif "RISK SCORE:" in line_stripped:
                     current_section = "risk"
                     continue
                 elif "SHOULD YOU CHALLENGE:" in line_stripped:
@@ -83,7 +83,13 @@ SHOULD YOU CHALLENGE:
                 if current_section == "summary" and line_stripped:
                     summary += line_stripped + " "
                 elif current_section == "risk" and line_stripped:
-                    risk += line_stripped + " "
+                    try:
+                        import re
+                        digits = re.findall(r'\d+', line_stripped)
+                        if digits:
+                            risk = int(digits[0])
+                    except:
+                        pass
                 elif current_section == "challenge" and line_stripped:
                     should_challenge_raw += line_stripped + " "
                     
@@ -92,20 +98,20 @@ SHOULD YOU CHALLENGE:
             return {
                 "explanation": response,
                 "summary": summary.strip(),
-                "risk": risk.strip(),
+                "risk": risk,
                 "should_challenge": should_challenge,
                 "decision_id": decision.get("id"),
-                "model_used": "gemini-1.5-flash via LangChain"
+                "model_used": "gemini-2.5-flash via LangChain"
             }
         except Exception as e:
             return {
                 "explanation": "AI explanation unavailable",
                 "error": str(e),
                 "summary": "AI Error",
-                "risk": "AI Error",
+                "risk": 5,
                 "should_challenge": False,
                 "decision_id": decision.get("id"),
-                "model_used": "gemini-1.5-flash via LangChain"
+                "model_used": "gemini-2.5-flash via LangChain"
             }
 
     def explain_batch(self, decisions: list[dict]) -> list[dict]:
@@ -179,13 +185,13 @@ RISK SCORE:
             return {
                 "explanation": explanation.strip() or response,
                 "risk_score": risk_score,
-                "model_used": "gemini-1.5-flash via LangChain"
+                "model_used": "gemini-2.5-flash via LangChain"
             }
         except Exception as e:
             return {
                 "explanation": "AI Error: " + str(e),
                 "risk_score": 5,
-                "model_used": "gemini-1.5-flash via LangChain"
+                "model_used": "gemini-2.5-flash via LangChain"
             }
 
 ai_explainer = AIExplainer()

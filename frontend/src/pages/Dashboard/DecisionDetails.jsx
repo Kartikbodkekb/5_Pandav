@@ -106,7 +106,6 @@ const DecisionDetails = () => {
                             {[
                                 { label: 'Agent Address', value: decision?.agent },
                                 { label: 'Timestamp', value: decision?.timestamp ? new Date(decision.timestamp * 1000).toLocaleString() : 'N/A' },
-                                { label: 'Explanation Hash', value: decision?.explanation_hash },
                                 { label: 'Disputed', value: decision?.disputed ? 'Yes' : 'No' },
                             ].map(row => (
                                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>

@@ -34,9 +34,9 @@ class BlockchainService:
                 raise HTTPException(status_code=404, detail={"error": "Decision not found"})
                 
             decision_data = self.contract.functions.getDecision(id).call()
-            # Struct: id, action, reason, amount, explanationHash, timestamp, agent, status, disputed
+            # Struct: id, action, reason, amount, explanationHash, timestamp, agent, agentName, status, disputed
             
-            d_id, action, reason, amount, explanation_hash, timestamp, agent, status, disputed = decision_data
+            d_id, action, reason, amount, explanation_hash, timestamp, agent, agentName, status, disputed = decision_data
             
             status_labels = {0: "Pending", 1: "Challenged", 2: "Resolved"}
             status_label = status_labels.get(status, "Unknown")
@@ -52,6 +52,7 @@ class BlockchainService:
                 "explanation_hash": explanation_hash,
                 "timestamp": timestamp,
                 "agent": agent,
+                "agentName": agentName,
                 "status": status,
                 "status_label": status_label,
                 "disputed": disputed,
@@ -75,13 +76,13 @@ class BlockchainService:
         except Exception as e:
             raise HTTPException(status_code=503, detail={"error": "HeLa blockchain unreachable", "message": str(e)})
 
-    def log_decision(self, action: str, reason: str, amount: int, explanation_hash: str, private_key: str) -> str:
+    def log_decision(self, agent_name: str, action: str, reason: str, amount: int, explanation_hash: str, private_key: str) -> str:
         try:
             account = self.w3.eth.account.from_key(private_key)
             # Always fetch fresh 'pending' nonce to avoid conflicts on rapid submissions
             nonce = self.w3.eth.get_transaction_count(account.address, 'pending')
             
-            tx = self.contract.functions.logDecision(action, reason, amount, explanation_hash).build_transaction({
+            tx = self.contract.functions.logDecision(agent_name, action, reason, amount, explanation_hash).build_transaction({
                 'from': account.address,
                 'nonce': nonce,
                 'gas': 500000,

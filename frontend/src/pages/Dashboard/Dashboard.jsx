@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, ShieldAlert, CheckCircle2, ChevronRight, Activity, Clock, Server } from 'lucide-react';
-import { useWeb3ModalAccount } from '@web3modal/ethers/react';
+import { useWeb3Context } from '../../context/Web3Context';
 import './Dashboard.css';
 import './DashboardPages.css';
 
@@ -10,8 +10,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [verifyingId, setVerifyingId] = useState(null);
   
-  // Web3Modal Hooks
-  const { address, isConnected } = useWeb3ModalAccount();
+  // Native Web3 Context
+  const { address, isConnected } = useWeb3Context();
   
   const navigate = useNavigate();
 
