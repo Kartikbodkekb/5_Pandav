@@ -1,33 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './DashboardPages.css';
 
-const AgentSandbox = () => {
-    const [action, setAction] = useState('');
-    const [reason, setReason] = useState('');
-    const [amount, setAmount] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [result, setResult] = useState(null);
+const STATUS_CONFIG = {
+    auto_executed:    { label: 'Auto-Executed',    color: '#4ade80', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.2)'   },
+    pending_review:   { label: 'Needs Review',     color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)' },
+    execution_failed: { label: 'Failed',           color: '#ef4444', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.2)'  },
+};
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
+const getRiskColor = (score) => {
+    if (score >= 7) return '#ef4444';
+    if (score >= 5) return '#f59e0b';
+    return '#4ade80';
+};
+
+const AgentSandbox = () => {
+    const navigate = useNavigate();
+    const [profiles, setProfiles] = useState([]);
+    const [isRunning, setIsRunning] = useState(false);
+    const [results, setResults] = useState(null);
+    const [error, setError] = useState(null);
+
+    // Load agent profiles on mount
+    useEffect(() => {
+        fetch('http://localhost:8000/agents/profiles')
+            .then(r => r.json())
+            .then(data => setProfiles(data.agents || []))
+            .catch(console.error);
+    }, []);
+
+    const handleRunAgents = async () => {
+        setIsRunning(true);
+        setResults(null);
+        setError(null);
         try {
-            const res = await fetch('http://127.0.0.1:8000/agent/trigger', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, reason: "Context provided by sandbox", amount: parseInt(amount) || 0, explanation_hash: reason })
-            });
+            const res = await fetch('http://localhost:8000/agents/run', { method: 'POST' });
+            if (!res.ok) throw new Error(`Server error: ${res.status}`);
             const data = await res.json();
-            if (!res.ok) {
-                setResult({ isError: true, detail: data.detail });
-            } else {
-                setResult(data);
-                setAction(''); setReason(''); setAmount('');
-            }
+            setResults(data);
         } catch (err) {
-            console.error(err);
+            setError(err.message);
         } finally {
-            setIsSubmitting(false);
+            setIsRunning(false);
         }
     };
 
@@ -35,62 +49,146 @@ const AgentSandbox = () => {
         <div className="page-container">
             <header className="page-header">
                 <h2>Agent Sandbox</h2>
-                <p>Simulate AI agent decisions and funnel them directly into the Interceptor for risk evaluation.</p>
+                <p>
+                    Trigger all 4 autonomous AI agents simultaneously. Low-risk decisions are executed
+                    on the HeLa blockchain automatically. High-risk decisions appear in the Command Center for your review.
+                </p>
             </header>
 
-            <div className="glass-card" style={{ maxWidth: '600px' }}>
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Action</label>
-                        <input 
-                            type="text" 
-                            placeholder="e.g. transfer 5 USDC to treasury"
-                            value={action}
-                            onChange={(e) => setAction(e.target.value)}
-                            required 
-                        />
+            {/* Agent Profiles */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                {profiles.map(agent => (
+                    <div key={agent.name} className="glass-card" style={{ margin: 0, padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '1.5rem' }}>
+                                {agent.name === 'Alpha-Trader' ? '📈' :
+                                 agent.name === 'DAO-Governor' ? '🏛️' :
+                                 agent.name === 'Yield-Seeker' ? '💰' : '🛡️'}
+                            </span>
+                            <strong style={{ color: '#fff', fontSize: '0.95rem' }}>{agent.name}</strong>
+                        </div>
+                        <p style={{ color: '#a0a0a0', fontSize: '0.82rem', margin: '0 0 0.5rem 0', lineHeight: '1.4' }}>
+                            {agent.description}
+                        </p>
+                        <span style={{ color: '#6b7280', fontSize: '0.78rem' }}>{agent.decision_count} possible decisions</span>
                     </div>
-                    <div className="form-group">
-                        <label>Reasoning Context</label>
-                        <textarea 
-                            rows="3" 
-                            placeholder="Explain the logic behind this action..."
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            required
-                        ></textarea>
-                    </div>
-                    <div className="form-group">
-                        <label>Financial Value (Amount)</label>
-                        <input 
-                            type="number" 
-                            placeholder="0"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                        />
-                    </div>
-                    <button type="submit" className="primary-btn" disabled={isSubmitting}>
-                        {isSubmitting ? 'Evaluating via Gemini...' : 'Trigger Simulation'}
-                    </button>
-                </form>
+                ))}
+            </div>
 
-                {result && result.isError && (
-                    <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(255,0,0,0.05)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '8px' }}>
-                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#ef4444' }}>Transaction Failed</h4>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#a0a0a0' }}>{result.detail?.error || 'Unknown Error'}</p>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#a0a0a0' }}>{result.detail?.message}</p>
+            {/* Threshold Banner */}
+            <div className="glass-card" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(168,85,247,0.05)', borderColor: 'rgba(168,85,247,0.2)' }}>
+                <span style={{ fontSize: '1.5rem' }}>⚡</span>
+                <div>
+                    <div style={{ color: '#d8b4fe', fontWeight: 600, fontSize: '0.9rem' }}>Auto-Execution Rule</div>
+                    <div style={{ color: '#a0a0a0', fontSize: '0.85rem' }}>
+                        Risk Score <strong style={{ color: '#4ade80' }}>1–5</strong> → Executed on HeLa Blockchain automatically
+                        &nbsp;|&nbsp;
+                        Risk Score <strong style={{ color: '#f59e0b' }}>6–10</strong> → Queued for human review in Command Center
                     </div>
-                )}
-                
-                {result && !result.isError && (
-                    <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(0,255,0,0.05)', border: '1px solid rgba(0,255,0,0.2)', borderRadius: '8px' }}>
-                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#4ade80' }}>Success! Intent Logged On-Chain.</h4>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#a0a0a0' }}>Tx Hash: <strong style={{color: '#fff'}}>{result.tx_hash}</strong></p>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#a0a0a0' }}>Head to the Audit History to review it.</p>
-                        <a href={result.hela_explorer_url} target="_blank" rel="noreferrer" style={{color: '#a855f7', display: 'block', marginTop: '0.5rem'}}>View on HeLa Explorer</a>
-                    </div>
+                </div>
+            </div>
+
+            {/* Run Button */}
+            <div className="glass-card" style={{ textAlign: 'center', padding: '2.5rem' }}>
+                <button
+                    onClick={handleRunAgents}
+                    disabled={isRunning}
+                    className="primary-btn"
+                    style={{ fontSize: '1.1rem', padding: '1rem 2.5rem', opacity: isRunning ? 0.7 : 1 }}
+                >
+                    {isRunning ? '🤖 Agents thinking & executing...' : '🚀 Run All 4 Agents Now'}
+                </button>
+                {isRunning && (
+                    <p style={{ color: '#a0a0a0', marginTop: '1rem', fontSize: '0.9rem' }}>
+                        Each agent is picking a decision, calling Gemini for risk assessment, and executing or queueing...
+                    </p>
                 )}
             </div>
+
+            {/* Error */}
+            {error && (
+                <div className="glass-card" style={{ background: 'rgba(239,68,68,0.05)', borderColor: 'rgba(239,68,68,0.2)', color: '#f87171' }}>
+                    {error}
+                </div>
+            )}
+
+            {/* Results */}
+            {results && (
+                <>
+                    {/* Summary Bar */}
+                    <div className="stats-grid">
+                        {[
+                            { label: 'Agents Run', value: results.agents_run, color: '#fff' },
+                            { label: 'Auto-Executed', value: results.auto_executed, color: '#4ade80' },
+                            { label: 'Needs Review', value: results.pending_review, color: '#f59e0b' },
+                            { label: 'Risk Threshold', value: `≤ ${results.threshold}`, color: '#a855f7' },
+                        ].map(s => (
+                            <div key={s.label} className="glass-card" style={{ textAlign: 'center' }}>
+                                <div style={{ color: '#a0a0a0', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>{s.label}</div>
+                                <div style={{ fontWeight: 700, fontSize: '1.5rem', color: s.color }}>{s.value}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Per-Agent Results */}
+                    {results.results.map(r => {
+                        const statusCfg = STATUS_CONFIG[r.status] || STATUS_CONFIG.execution_failed;
+                        return (
+                            <div key={r.agent} className="glass-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+                                    <div>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: '#fff', marginBottom: '0.25rem' }}>{r.agent}</div>
+                                        <div style={{ color: '#a0a0a0', fontSize: '0.85rem' }}>{r.action}</div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+                                        <span style={{
+                                            padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.82rem',
+                                            fontWeight: 600, color: getRiskColor(r.risk_score),
+                                            background: `${getRiskColor(r.risk_score)}15`,
+                                            border: `1px solid ${getRiskColor(r.risk_score)}30`
+                                        }}>
+                                            Risk: {r.risk_score}/10
+                                        </span>
+                                        <span style={{
+                                            padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.82rem',
+                                            fontWeight: 600, color: statusCfg.color,
+                                            background: statusCfg.bg, border: `1px solid ${statusCfg.border}`
+                                        }}>
+                                            {statusCfg.label}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <p style={{ color: '#a0a0a0', fontSize: '0.85rem', fontStyle: 'italic', margin: '0 0 0.75rem 0' }}>
+                                    "{r.reason}"
+                                </p>
+
+                                <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.75rem', color: '#cbd5e1', fontSize: '0.85rem', lineHeight: '1.6', marginBottom: '0.75rem' }}>
+                                    {r.explanation}
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>{r.message}</span>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        {r.tx_hash && (
+                                            <a href={r.explorer_url} target="_blank" rel="noreferrer"
+                                               style={{ color: '#a855f7', fontSize: '0.82rem', textDecoration: 'none', padding: '0.3rem 0.8rem', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '6px' }}>
+                                                View on HeLa →
+                                            </a>
+                                        )}
+                                        {r.status === 'pending_review' && (
+                                            <button onClick={() => navigate('/dashboard')}
+                                                    style={{ color: '#f59e0b', fontSize: '0.82rem', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '6px', padding: '0.3rem 0.8rem', cursor: 'pointer' }}>
+                                                Review in Command Center →
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </>
+            )}
         </div>
     );
 };

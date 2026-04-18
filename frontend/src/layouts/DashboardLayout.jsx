@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { auth } from '../../firebase';
+import { signOut } from 'firebase/auth';
 import { useWeb3Modal, useWeb3ModalAccount, useDisconnect } from '@web3modal/ethers/react';
 import './DashboardLayout.css';
 
@@ -9,6 +11,17 @@ const DashboardLayout = () => {
   const { disconnect } = useDisconnect();
   
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      if (isConnected) disconnect();
+      navigate('/');
+    } catch (err) {
+      console.error("Logout error", err);
+    }
+  };
 
   const formatAddress = (addr) => {
     if (!addr) return '';
@@ -39,10 +52,6 @@ const DashboardLayout = () => {
             <span className="icon">🧪</span>
             Agent Sandbox
           </NavLink>
-          <NavLink to="/dashboard/settings" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-            <span className="icon">⚙️</span>
-            Settings
-          </NavLink>
         </nav>
       </aside>
 
@@ -62,6 +71,12 @@ const DashboardLayout = () => {
                 className={`wallet-btn ${isConnected ? 'connected' : ''}`}
             >
                 {isConnected ? formatAddress(address) : 'Connect Wallet'}
+            </button>
+            <button
+                onClick={handleLogout}
+                style={{ marginLeft: '12px', padding: '0.6rem 1.2rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+                Logout
             </button>
           </div>
         </header>

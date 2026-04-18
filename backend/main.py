@@ -261,10 +261,171 @@ def verify_intent(req: VerifyIntentRequest):
             "message": "Intent verified and executed on HeLa network",
             "audit_id": req.audit_id,
             "tx_hash": tx_hash,
-            "hela_explorer_url": f"https://testnet-blockexplorer.helachain.com/tx/{tx_hash}"
+            "hela_explorer_url": f"https://testnet-scan.helachain.com/tx/{tx_hash}"
         }
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ─────────────────────────────────────────────────────────────
+#  AUTONOMOUS AGENTS ENGINE
+#  4 distinct AI personas generate decisions independently.
+#  Low risk (<= 5) → auto-executed on HeLa blockchain.
+#  High risk (> 5) → queued in Command Center for human review.
+# ─────────────────────────────────────────────────────────────
+
+import random
+
+AGENT_PROFILES = {
+    "Alpha-Trader": {
+        "description": "High-frequency DeFi trading agent focused on arbitrage and rebalancing",
+        "decisions": [
+            ("Swap 10 ETH to USDC", "Market volatility spike detected — reducing ETH exposure by 15% to minimize downside risk", 500),
+            ("Provide liquidity to ETH/USDC pool", "Fee APY at 8.4%, pool utilization high — optimal LP window identified", 100),
+            ("Purchase ETH on price dip", "RSI dropped below 28, historical buy signal confirmed across 3 timeframes", 200),
+            ("Close ETH long position", "Bollinger Band upper breach detected, momentum reversal incoming", 300),
+        ]
+    },
+    "DAO-Governor": {
+        "description": "Governance agent that votes and manages treasury on behalf of DAO",
+        "decisions": [
+            ("Vote YES on Proposal #44", "Proposal upgrades core protocol security module — risk model fully approves", 0),
+            ("Vote NO on Proposal #45", "Proposal introduces centralization risk — AI governance model rejects", 0),
+            ("Transfer 50 USDC to grants committee", "Monthly DAO-approved grant disbursement per charter clause 12", 50),
+            ("Delegate 1000 votes to security council", "Emergency security measure — quorum threshold at risk", 0),
+        ]
+    },
+    "Yield-Seeker": {
+        "description": "Optimizes yield by staking, compounding, and migrating liquidity",
+        "decisions": [
+            ("Stake 10 HELA tokens", "Staking APY at 12.4%, optimal compounding window identified", 10),
+            ("Restake compounding rewards", "Auto-compound triggered at 0.5 HELA threshold — maximizes returns", 1),
+            ("Withdraw from low-yield pool", "Current APY dropped to 2.1%, migrating to 8.9% pool", 25),
+            ("Deposit to HELA yield vault", "Vault APY at 14.2% — highest risk-adjusted yield available", 50),
+        ]
+    },
+    "Risk-Manager": {
+        "description": "Portfolio risk management agent enforcing stop-loss and exposure limits",
+        "decisions": [
+            ("Withdraw LP position", "Impermanent loss exceeded 8% threshold — exiting position per risk policy", 100),
+            ("Reduce ETH exposure by 20%", "Portfolio correlation risk elevated, BTC correlation at 0.94", 300),
+            ("Activate emergency stop-loss", "Portfolio drawdown at 12% — exceeds 10% hard limit", 800),
+            ("Rebalance portfolio to 60/40 split", "Scheduled weekly rebalancing — drift detected at 7%", 150),
+        ]
+    }
+}
+
+AUTO_EXECUTE_THRESHOLD = 5  # Risk score <= this → auto-execute on blockchain
+
+
+async def _run_single_agent(agent_name: str, profile: dict) -> dict:
+    """Run one agent asynchronously — pick decision, assess with Gemini, execute or queue."""
+    import asyncio
+    action, reason, amount = random.choice(profile["decisions"])
+
+    intent_data = {
+        "action": action,
+        "reason": f"[{agent_name}] {reason}",
+        "amount": amount
+    }
+
+    # Run the blocking Gemini call in a thread so it doesn't block the event loop
+    explanation_res = await asyncio.to_thread(ai_explainer.explain_intent, intent_data)
+    risk_score = explanation_res.get("risk_score", 5)
+    explanation = explanation_res.get("explanation", "")
+
+    result = {
+        "agent": agent_name,
+        "agent_description": profile["description"],
+        "action": action,
+        "reason": reason,
+        "amount": amount,
+        "risk_score": risk_score,
+        "explanation": explanation,
+    }
+
+    if risk_score <= AUTO_EXECUTE_THRESHOLD:
+        # ✅ LOW RISK → Auto-execute directly on blockchain (fire-and-forget, no receipt wait)
+        try:
+            explanation_hash = explanation[:32] if explanation else agent_name
+            tx_hash = await asyncio.to_thread(
+                blockchain_service.log_decision,
+                action, f"[{agent_name}] {reason}", amount, explanation_hash, settings.PRIVATE_KEY
+            )
+            result.update({
+                "status": "auto_executed",
+                "tx_hash": tx_hash,
+                "explorer_url": f"https://testnet-scan.helachain.com/tx/{tx_hash}",
+                "message": "Auto-executed on HeLa blockchain (low risk)"
+            })
+        except Exception as e:
+            result.update({
+                "status": "execution_failed",
+                "tx_hash": None,
+                "message": f"Blockchain error: {str(e)}"
+            })
+    else:
+        # 🚨 HIGH RISK → Queue for human review in Command Center
+        audit_id = str(uuid.uuid4())
+        intents_db[audit_id] = {
+            "audit_id": audit_id,
+            "action": action,
+            "reason": f"[{agent_name}] {reason}",
+            "amount": amount,
+            "agent_name": agent_name,
+            "explanation": explanation,
+            "risk_score": risk_score,
+            "status": "pending",
+            "tx_hash": None,
+            "submitted_at": int(time.time())
+        }
+        result.update({
+            "status": "pending_review",
+            "audit_id": audit_id,
+            "tx_hash": None,
+            "message": "Queued for human review (high risk)"
+        })
+
+    print(f"[{agent_name}] Risk: {risk_score}/10 → {result['status']}")
+    return result
+
+
+@app.post("/agents/run")
+async def run_autonomous_agents():
+    """
+    Trigger all 4 autonomous agents concurrently.
+    Results return as soon as all agents finish (parallel, not sequential).
+    Low risk → auto-executes on HeLa. High risk → queued for human review.
+    """
+    import asyncio
+
+    # Run all agents simultaneously — total time = slowest agent, not sum of all
+    tasks = [_run_single_agent(name, profile) for name, profile in AGENT_PROFILES.items()]
+    results = await asyncio.gather(*tasks, return_exceptions=False)
+
+    auto_executed  = sum(1 for r in results if r["status"] == "auto_executed")
+    pending_review = sum(1 for r in results if r["status"] == "pending_review")
+    failed         = sum(1 for r in results if r["status"] == "execution_failed")
+
+    return {
+        "agents_run": len(results),
+        "auto_executed": auto_executed,
+        "pending_review": pending_review,
+        "failed": failed,
+        "threshold": AUTO_EXECUTE_THRESHOLD,
+        "results": list(results)
+    }
+
+
+@app.get("/agents/profiles")
+def get_agent_profiles():
+    """Return the list of active agent profiles for the UI."""
+    return {
+        "agents": [
+            {"name": name, "description": profile["description"], "decision_count": len(profile["decisions"])}
+            for name, profile in AGENT_PROFILES.items()
+        ],
+        "auto_execute_threshold": AUTO_EXECUTE_THRESHOLD
+    }

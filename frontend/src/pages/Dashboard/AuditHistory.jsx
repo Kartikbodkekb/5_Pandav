@@ -52,7 +52,7 @@ const AuditHistory = () => {
                                     <td>{d.amount}</td>
                                     <td><span className="status-badge executed">{d.status_label}</span></td>
                                     <td>
-                                        <a href={d.explorer_url} target="_blank" rel="noreferrer" style={{color: '#a855f7'}}>
+                                        <a href={d.explorer_url} target="_blank" rel="noreferrer" style={{ color: '#a855f7' }}>
                                             View Agent Address
                                         </a>
                                     </td>
