@@ -59,7 +59,7 @@ def run_mock_agent():
         hex_hash = w3.to_hex(tx_hash)
         
         print(f"Tx Hash: {hex_hash}")
-        print(f"Explorer URL: https://testnet-scan.helachain.com/tx/{hex_hash}")
+        print(f"Explorer URL: https://testnet-blockexplorer.helachain.com/tx/{hex_hash}")
         
         # Wait for receipt to ensure sequential nonces work smoothly if network is slow
         # but to keep it simple and hackathon friendly, we just increment and sleep

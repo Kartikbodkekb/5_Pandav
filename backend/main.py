@@ -61,7 +61,7 @@ def get_decisions():
         return {
             "decisions": decisions,
             "total": len(decisions),
-            "hela_explorer": "https://testnet-scan.helachain.com"
+            "hela_explorer": "https://testnet-blockexplorer.helachain.com"
         }
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -180,7 +180,7 @@ def trigger_agent(req: MockAgentRequest):
             "success": True,
             "tx_hash": tx_hash,
             "action": req.action,
-            "hela_explorer_url": f"https://testnet-scan.helachain.com/tx/{tx_hash}"
+            "hela_explorer_url": f"https://testnet-blockexplorer.helachain.com/tx/{tx_hash}"
         }
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -261,7 +261,7 @@ def verify_intent(req: VerifyIntentRequest):
             "message": "Intent verified and executed on HeLa network",
             "audit_id": req.audit_id,
             "tx_hash": tx_hash,
-            "hela_explorer_url": f"https://testnet-scan.helachain.com/tx/{tx_hash}"
+            "hela_explorer_url": f"https://testnet-blockexplorer.helachain.com/tx/{tx_hash}"
         }
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)

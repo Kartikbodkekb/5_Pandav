@@ -56,7 +56,7 @@ class BlockchainService:
                 "status_label": status_label,
                 "disputed": disputed,
                 "is_challengeable": is_challengeable,
-                "explorer_url": f"https://testnet-scan.helachain.com/address/{agent}"
+                "explorer_url": f"https://testnet-blockexplorer.helachain.com/address/{agent}"
             }
         except HTTPException:
             raise
@@ -84,11 +84,11 @@ class BlockchainService:
                 'from': account.address,
                 'nonce': nonce,
                 'gas': 500000,
-                'gasPrice': self.w3.to_wei('1', 'gwei')
+                'gasPrice': self.w3.eth.gas_price
             })
             
             signed_tx = self.w3.eth.account.sign_transaction(tx, private_key)
-            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
             
             self.w3.eth.wait_for_transaction_receipt(tx_hash)
             

@@ -8,17 +8,13 @@ const AuditHistory = () => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                // Future integration: fetch from GET /decisions
-                // const res = await fetch('http://localhost:8000/decisions');
-                // const data = await res.json();
-                // setDecisions(data.decisions);
-                
-                // MOCK DATA FOR PROTOTYPE
-                setDecisions([
-                    { id: 1, action: "swap ETH to USDC", amount: 500, status_label: "Executed", txHash: "0xdaa68666..." },
-                    { id: 2, action: "stake 10 HELA tokens", amount: 10, status_label: "Executed", txHash: "0xf4e051df..." }
-                ]);
-            } catch (err) {
+                const res = await fetch('http://127.0.0.1:8000/decisions');
+                const data = await res.json();
+                if (data && data.decisions) {
+                    setDecisions(data.decisions);
+                } else {
+                    setDecisions([]);
+                }
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -56,8 +52,8 @@ const AuditHistory = () => {
                                     <td>{d.amount}</td>
                                     <td><span className="status-badge executed">{d.status_label}</span></td>
                                     <td>
-                                        <a href={`https://testnet-scan.helachain.com/tx/${d.txHash}`} target="_blank" rel="noreferrer" style={{color: '#a855f7'}}>
-                                            {d.txHash}
+                                        <a href={d.explorer_url} target="_blank" rel="noreferrer" style={{color: '#a855f7'}}>
+                                            View Agent Address
                                         </a>
                                     </td>
                                 </tr>

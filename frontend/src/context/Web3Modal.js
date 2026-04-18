@@ -10,7 +10,7 @@ const helaTestnet = {
   chainId: 666888, // HeLa Testnet
   name: 'HeLa Testnet',
   currency: 'HLUSD',
-  explorerUrl: 'https://testnet-scan.helachain.com',
+  explorerUrl: 'https://testnet-blockexplorer.helachain.com',
   rpcUrl: 'https://testnet-rpc.helachain.com'
 }
 
