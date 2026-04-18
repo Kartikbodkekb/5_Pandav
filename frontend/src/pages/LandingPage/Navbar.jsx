@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import './Navbar.css'
 
 const navLinks = [
@@ -46,9 +47,9 @@ export default function Navbar() {
           ))}
         </div>
 
-        <a href="#hero" className="navbar__cta">
+        <Link to="/login" className="navbar__cta">
           Launch App
-        </a>
+        </Link>
 
         <button
           className={`navbar__hamburger ${mobileOpen ? 'navbar__hamburger--open' : ''}`}
