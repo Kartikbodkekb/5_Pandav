@@ -86,7 +86,7 @@ contract AgentAuditLogger {
      * @dev Allows any user or governing body to challenge an agent's decision.
      * @param _id The ID of the decision to challenge.
      */
-    function challengeDecision(uint256 _id) public {
+    function challengeDecision(uint256 _id) public onlyGovernance {
         require(_id < totalDecisions, "AgentAuditLogger: Decision does not exist");
         Decision storage decision = decisions[_id];
         

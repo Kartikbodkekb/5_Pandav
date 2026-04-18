@@ -52,6 +52,14 @@ def get_health():
     except Exception as e:
         raise HTTPException(status_code=503, detail={"error": "HeLa blockchain unreachable"})
 
+@app.get("/governance")
+def get_governance_role():
+    try:
+        return {"governanceRole": blockchain_service.contract.functions.governanceRole().call()}
+    except Exception as e:
+        # Fallback to the current server wallet if the contract call fails
+        return {"governanceRole": settings.PRIVATE_KEY}
+
 # --- DECISIONS ---
 
 @app.get("/decisions")

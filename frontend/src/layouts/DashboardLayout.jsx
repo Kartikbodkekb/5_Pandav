@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { auth } from '../../firebase';
 import { signOut } from 'firebase/auth';
-import { useWeb3Modal, useWeb3ModalAccount, useDisconnect } from '@web3modal/ethers/react';
+import { useWeb3Context } from '../context/Web3Context';
 import './DashboardLayout.css';
 
 const DashboardLayout = () => {
-  const { open } = useWeb3Modal();
-  const { address, isConnected } = useWeb3ModalAccount();
-  const { disconnect } = useDisconnect();
+  const { address, isConnected, connect, disconnect } = useWeb3Context();
   
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
@@ -67,7 +65,7 @@ const DashboardLayout = () => {
           </div>
           <div className="header-right">
              <button
-                onClick={() => open()}
+                onClick={isConnected ? () => disconnect() : () => connect()}
                 className={`wallet-btn ${isConnected ? 'connected' : ''}`}
             >
                 {isConnected ? formatAddress(address) : 'Connect Wallet'}

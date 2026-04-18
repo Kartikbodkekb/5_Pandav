@@ -1,37 +1,71 @@
 [
   {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
     "inputs": [
       {
-        "internalType": "string",
-        "name": "_action",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "_reason",
-        "type": "string"
-      },
-      {
+        "indexed": true,
         "internalType": "uint256",
-        "name": "_amount",
+        "name": "id",
         "type": "uint256"
       },
       {
-        "internalType": "string",
-        "name": "_explanationHash",
-        "type": "string"
+        "indexed": false,
+        "internalType": "address",
+        "name": "challenger",
+        "type": "address"
       }
     ],
-    "name": "logDecision",
-    "outputs": [
+    "name": "DecisionChallenged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
       {
+        "indexed": true,
         "internalType": "uint256",
-        "name": "",
+        "name": "id",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "action",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "agent",
+        "type": "address"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "name": "DecisionLogged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "upheld",
+        "type": "bool"
+      }
+    ],
+    "name": "DisputeResolved",
+    "type": "event"
   },
   {
     "inputs": [
@@ -42,24 +76,6 @@
       }
     ],
     "name": "challengeDecision",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_id",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "_upheld",
-        "type": "bool"
-      }
-    ],
-    "name": "resolveDispute",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -132,6 +148,71 @@
   },
   {
     "inputs": [],
+    "name": "governanceRole",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_action",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_reason",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_explanationHash",
+        "type": "string"
+      }
+    ],
+    "name": "logDecision",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_upheld",
+        "type": "bool"
+      }
+    ],
+    "name": "resolveDispute",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "totalDecisions",
     "outputs": [
       {
@@ -144,66 +225,16 @@
     "type": "function"
   },
   {
-    "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "action",
-        "type": "string"
-      },
-      {
-        "indexed": false,
         "internalType": "address",
-        "name": "agent",
+        "name": "_newGovernance",
         "type": "address"
       }
     ],
-    "name": "DecisionLogged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "challenger",
-        "type": "address"
-      }
-    ],
-    "name": "DecisionChallenged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "upheld",
-        "type": "bool"
-      }
-    ],
-    "name": "DisputeResolved",
-    "type": "event"
+    "name": "transferGovernance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ]

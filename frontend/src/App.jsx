@@ -8,10 +8,11 @@ import AuditHistory from './pages/Dashboard/AuditHistory';
 import DisputeCenter from './pages/Dashboard/DisputeCenter';
 import AgentSandbox from './pages/Dashboard/AgentSandbox';
 import DecisionDetails from './pages/Dashboard/DecisionDetails';
-import './context/Web3Modal'; // Initialize Web3Modal
+import { Web3Provider } from './context/Web3Context';
 
 function App() {
   return (
+    <Web3Provider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -30,6 +31,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </Web3Provider>
   );
 }
 
