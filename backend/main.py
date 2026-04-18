@@ -120,15 +120,19 @@ def challenge_decision_endpoint(id: int, req: ChallengeRequest):
             current_time = int(time.time())
             expired_at = decision.get("timestamp") + settings.CHALLENGE_WINDOW_SECONDS
             if current_time > expired_at:
-                return HTTPException(status_code=400, detail={"error": "Challenge window closed", "expired_at": expired_at})
+                raise HTTPException(status_code=400, detail={"error": "Challenge window closed", "expired_at": expired_at})
             else:
-                return HTTPException(status_code=400, detail=f"Decision not challengeable. Status is {decision.get('status_label')}")
+                raise HTTPException(status_code=400, detail=f"Decision not challengeable. Status is {decision.get('status_label')}")
                 
+        # Access abi directly if possible, else return list placeholder
+        abi = blockchain_service.contract.abi if hasattr(blockchain_service, 'contract') else []
+        
         return {
             "challengeable": True,
             "message": "Send transaction via MetaMask to challenge",
             "decision": decision,
             "contract_address": settings.CONTRACT_ADDRESS,
+            "abi": abi,
             "function": "challengeDecision",
             "args": [id]
         }
@@ -163,11 +167,12 @@ class MockAgentRequest(BaseModel):
     action: str
     reason: str
     amount: int
+    explanation_hash: str = ""
 
 @app.post("/agent/trigger")
 def trigger_agent(req: MockAgentRequest):
     try:
-        tx_hash = blockchain_service.log_decision(req.action, req.reason, req.amount, settings.PRIVATE_KEY)
+        tx_hash = blockchain_service.log_decision(req.action, req.reason, req.amount, req.explanation_hash, settings.PRIVATE_KEY)
         return {
             "success": True,
             "tx_hash": tx_hash,

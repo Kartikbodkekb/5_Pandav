@@ -1,0 +1,327 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_loggerAddress",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "decisionId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "upheld",
+						"type": "bool"
+					}
+				],
+				"name": "DisputeExecution",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "member",
+						"type": "address"
+					}
+				],
+				"name": "MemberAdded",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "member",
+						"type": "address"
+					}
+				],
+				"name": "MemberRemoved",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "decisionId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "voter",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "supportUpheld",
+						"type": "bool"
+					}
+				],
+				"name": "VoteCast",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_newMember",
+						"type": "address"
+					}
+				],
+				"name": "addMember",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "auditLogger",
+				"outputs": [
+					{
+						"internalType": "contract AgentAuditLogger",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_decisionId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "_voteUpheld",
+						"type": "bool"
+					}
+				],
+				"name": "castVote",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_decisionId",
+						"type": "uint256"
+					}
+				],
+				"name": "challengeAndInitiateVote",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "disputeProposals",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "decisionId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "votesUpheld",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "votesRejected",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "endTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "executed",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_decisionId",
+						"type": "uint256"
+					}
+				],
+				"name": "executeResolution",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_decisionId",
+						"type": "uint256"
+					}
+				],
+				"name": "initiateDisputeVote",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "isMember",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_member",
+						"type": "address"
+					}
+				],
+				"name": "removeMember",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalMembers",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"details": "A simple DAO designed to govern the AgentAuditLogger protocol.  Allows DAO members to vote on challenged agent decisions and resolve them transparently.",
+			"kind": "dev",
+			"methods": {
+				"castVote(uint256,bool)": {
+					"details": "DAO members cast their vote.",
+					"params": {
+						"_decisionId": "The decision ID being voted on.",
+						"_voteUpheld": "True means \"I agree with the Challenger. Agent is wrong.\"                    False means \"I disagree with Challenger. Agent is right.\""
+					}
+				},
+				"challengeAndInitiateVote(uint256)": {
+					"details": "Allows a DAO member to directly challenge a decision and immediately start the voting process."
+				},
+				"constructor": {
+					"details": "Initialize DAO with the logger and add deployer as first member",
+					"params": {
+						"_loggerAddress": "Address of deployed AgentAuditLogger"
+					}
+				},
+				"executeResolution(uint256)": {
+					"details": "Execute the result of the vote and call resolveDispute on the Logger. Can be called by anyone once the voting period has ended."
+				},
+				"initiateDisputeVote(uint256)": {
+					"details": "Start a vote to resolve a challenged decision. Starts a 3-day voting window."
+				}
+			},
+			"title": "AgentDAO",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"AgentDAO.sol": "AgentDAO"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"AgentAuditLogger.sol": {
+			"keccak256": "0x668b3fdd7b6a7acb1376cc90e8251939ed209c41f246c939cc07d027633881f1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6be1ca9357093bf177c0691de790c9aa0ce6444fae7b73a48d830c5ed6146002",
+				"dweb:/ipfs/QmTEsPac6U1CBrqNzLhAaHc3h1QqAvRBYaCVMm4ou26wRi"
+			]
+		},
+		"AgentDAO.sol": {
+			"keccak256": "0x5f28dfb54832a872bedc52b5c8a3c417b79fad4ce6b2988bbf68eb43d87b7004",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://55d91f823185bb023b7db903c462dcfbfa1e057ad0b07789cc2a66cd618bbe91",
+				"dweb:/ipfs/QmPv5TAJrsrzN3bAqrAqe4F6nCojHzfg5GTjw1mre3wLLx"
+			]
+		}
+	},
+	"version": 1
+}

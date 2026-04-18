@@ -15,6 +15,11 @@
         "internalType": "uint256",
         "name": "_amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_explanationHash",
+        "type": "string"
       }
     ],
     "name": "logDecision",
@@ -90,6 +95,11 @@
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "explanationHash",
+            "type": "string"
           },
           {
             "internalType": "uint256",
