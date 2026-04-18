@@ -109,7 +109,6 @@ const shapes = [
 function MorphingParticles({ scrollProgress, mousePos }) {
   const meshRef = useRef()
   const currentPositions = useMemo(() => new Float32Array(shapes[0]), [])
-  const targetPositions = useMemo(() => new Float32Array(shapes[0]), [])
   const particleOffsets = useMemo(() => new Float32Array(PARTICLE_COUNT * 3), [])
 
   const { camera, size } = useThree()
@@ -150,7 +149,9 @@ function MorphingParticles({ scrollProgress, mousePos }) {
     raycaster.current.setFromCamera(mousePos, camera)
     const targetZ = 0
     const distance = (targetZ - camera.position.z) / raycaster.current.ray.direction.z
-    mouseWorldPos.current.copy(camera.position).add(raycaster.current.ray.direction.clone().multiplyScalar(distance))
+    // Reuse tempDir instead of clone() to avoid per-frame allocation
+    tempDir.copy(raycaster.current.ray.direction).multiplyScalar(distance)
+    mouseWorldPos.current.copy(camera.position).add(tempDir)
 
     // 3. Pre-calculate rotation variables outside the loop
     const parentRotation = meshRef.current.parent.rotation;
@@ -245,17 +246,13 @@ function Scene({ scrollProgress, mousePos }) {
       groupRef.current.rotation.x += mousePos.y * 0.2
       groupRef.current.rotation.y += mousePos.x * 0.2
 
-      // Scroll-based movement: move left when in "Features" section
-      // scrollProgress goes from 0 to 1 over 5 sections. 
-      // Hero (0) -> Features (~0.25) -> HowItWorks (~0.5)
+      // Scroll-based movement: move left when scrolling past Hero
+      // scrollProgress goes from 0 to 1 over 4 sections.
       const p = scrollProgress * 4;
       let targetX = 0;
-      if (p > 0 && p <= 1) {
-        // Hero to Features: move left
-        targetX = -2.5 * p;
-      } else if (p > 1 && p <= 2) {
-        // Features to HowItWorks: move back to center
-        targetX = -2.5 + 2.5 * (p - 1);
+      if (p > 0) {
+        // As soon as we start scrolling past Hero, move left and stay left
+        targetX = -2.5 * Math.min(p, 1); // interpolates 0 to -2.5 between p=0 and p=1, then stays at -2.5
       }
       
       // Smooth lerp to target position
@@ -272,22 +269,26 @@ function Scene({ scrollProgress, mousePos }) {
 
 export default function ParticleField() {
   const [scrollProgress, setScrollProgress] = useState(0)
-  const [mousePos, setMousePos] = useState(new THREE.Vector2())
+  // Use a plain object for state; reuse a single Vector2 ref to avoid per-event allocation
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const mousePosVec = useRef(new THREE.Vector2())
 
   useEffect(() => {
     const handleScroll = () => {
       // Calculate progress from 0 to 1 across the whole document
       const totalHeight = document.documentElement.scrollHeight - window.innerHeight
-      const progress = window.scrollY / totalHeight
+      // Guard against division by zero when page is not scrollable
+      const progress = totalHeight > 0 ? window.scrollY / totalHeight : 0
       setScrollProgress(progress)
     }
 
     const handleMouseMove = (event) => {
-      // Normalize mouse coordinates (-1 to +1)
-      setMousePos(new THREE.Vector2(
+      // Update the reusable Vector2 and update state with a plain object
+      mousePosVec.current.set(
         (event.clientX / window.innerWidth) * 2 - 1,
         -(event.clientY / window.innerHeight) * 2 + 1
-      ))
+      )
+      setMousePos({ x: mousePosVec.current.x, y: mousePosVec.current.y })
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })

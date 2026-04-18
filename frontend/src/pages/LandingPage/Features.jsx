@@ -6,19 +6,22 @@ const features = [
     title: 'Structured Decision Logging',
     description:
       'Every agent decision is logged with full context, reasoning chains, and metadata in an immutable, tamper-proof ledger accessible to all stakeholders.',
-    services: ['Immutable Ledger', 'Context Capture', 'Real-time Sync']
+    services: ['Immutable Ledger', 'Context Capture', 'Real-time Sync'],
+    tools: ['Ethereum', 'IPFS', 'GraphQL', 'PostgreSQL', 'Redis']
   },
   {
     title: 'Human-Readable Explainability',
     description:
       'Transform complex agent reasoning into clear, understandable explanations. Every decision comes with a natural-language rationale that any stakeholder can review.',
-    services: ['NLP Translation', 'Logic Trees', 'Stakeholder Dashboards']
+    services: ['NLP Translation', 'Logic Trees', 'Stakeholder Dashboards'],
+    tools: ['OpenAI', 'LangChain', 'LlamaIndex', 'React', 'D3.js']
   },
   {
     title: 'Decentralized Verification',
     description:
       'Enable trustless auditing and verification of agent behavior across distributed networks. Users and DAOs can challenge or override any decision transparently.',
-    services: ['On-Chain Proofs', 'DAO Governance', 'Dispute Resolution']
+    services: ['On-Chain Proofs', 'DAO Governance', 'Dispute Resolution'],
+    tools: ['Smart Contracts', 'Solidity', 'Zero-Knowledge Proofs', 'Hardhat']
   },
 ]
 
@@ -80,6 +83,16 @@ export default function Features() {
                     <p className="features__card-desc">{feature.description}</p>
                     <div className="features__card-tags">
                       {feature.services.map(s => <span key={s} className="features__card-tag">{s}</span>)}
+                    </div>
+                    <div className="features__card-tools">
+                      {feature.tools.map(t => (
+                        <div key={t} className="features__card-tool">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                          {t}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

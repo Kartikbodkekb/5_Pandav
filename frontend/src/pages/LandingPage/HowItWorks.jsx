@@ -52,35 +52,39 @@ export default function HowItWorks() {
 
   return (
     <section className="how" id="how-it-works" ref={sectionRef}>
-      <div className="how__glow" />
       <div className="how__inner container">
-        <div className="how__header">
-          <h2 className="how__title">
-            Protocol <span className="how__title-serif">In Action</span>
-          </h2>
-          <p className="how__subtitle">
-            From every corner of the network, we enable transparent accountability.
-            Each connection represents progress, every verification drives trust
-            forward into uncharted territories.
-          </p>
-        </div>
+        {/* Left column empty for 3D shape */}
+        <div className="how__visual-col"></div>
 
-        <div className="how__steps">
-          <div className="how__timeline" />
-          {steps.map((step, index) => (
-            <div
-              key={index}
-              className="how__step"
-              style={{ transitionDelay: `${index * 0.12}s` }}
-            >
-              <div className="how__step-number">{step.number}</div>
-              <div className="how__step-dot" />
-              <div className="how__step-content">
-                <h3 className="how__step-title">{step.title}</h3>
-                <p className="how__step-desc">{step.description}</p>
+        <div className="how__content-col">
+          <div className="how__header">
+            <h2 className="how__title">
+              Protocol <span className="how__title-serif">In Action</span>
+            </h2>
+            <p className="how__subtitle">
+              From every corner of the network, we enable transparent accountability.
+              Each connection represents progress, every verification drives trust
+              forward into uncharted territories.
+            </p>
+          </div>
+
+          <div className="how__steps">
+            <div className="how__timeline" />
+            {steps.map((step, index) => (
+              <div
+                key={index}
+                className="how__step"
+                style={{ transitionDelay: `${index * 0.12}s` }}
+              >
+                <div className="how__step-number">{step.number}</div>
+                <div className="how__step-dot" />
+                <div className="how__step-content">
+                  <h3 className="how__step-title">{step.title}</h3>
+                  <p className="how__step-desc">{step.description}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>

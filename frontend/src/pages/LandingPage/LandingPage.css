@@ -16,8 +16,8 @@
   pointer-events: none; /* Let events pass through empty space */
 }
 
-/* Re-enable pointer events for actual content sections */
-.content-layer > * {
+/* Re-enable pointer events for all content (including nested interactive elements) */
+.content-layer * {
   pointer-events: auto;
 }
 

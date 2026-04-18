@@ -11,10 +11,9 @@
 .particle-field-container canvas {
   width: 100% !important;
   height: 100% !important;
-  pointer-events: auto; /* Re-enable pointer events for Canvas to capture mouse if needed, but we handle mouse globally */
+  pointer-events: none; /* Mouse is handled globally via window listeners */
 }
 
-/* Adjust the glow to be centered in the background */
 .particle-field-container::before {
   content: '';
   position: absolute;
@@ -27,13 +26,22 @@
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
-  opacity: 0.5;
+  opacity: 0.4; /* Match keyframe start value to prevent flash */
   animation: bgGlowPulse 8s ease-in-out infinite;
 }
 
 @keyframes bgGlowPulse {
   0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
   50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .particle-field-container::before {
+    animation: none;
+    transform: translate(-50%, -50%);
+    opacity: 0.4;
+  }
 }
 
 @media (max-width: 768px) {

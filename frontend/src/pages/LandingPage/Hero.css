@@ -77,7 +77,7 @@
 .hero__title-light {
   display: block;
   font-family: var(--font-family);
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 300;
   letter-spacing: -0.02em;
 }
@@ -156,6 +156,13 @@
   color: var(--bg-primary);
   box-shadow: var(--shadow-glow);
   transform: translateY(-2px);
+}
+
+.hero__btn:focus-visible,
+.hero__btn--primary:focus-visible {
+  outline: 2px solid var(--accent-light);
+  outline-offset: 3px;
+  box-shadow: var(--shadow-glow);
 }
 
 /* Bottom Right Stats */
