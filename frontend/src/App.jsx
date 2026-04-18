@@ -1,7 +1,38 @@
-import LandingPage from './pages/LandingPage/LandingPage'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LandingPage from './pages/LandingPage/LandingPage';
+import AuthPage from './pages/Auth/AuthPage';
+import Dashboard from './pages/Dashboard/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import DashboardLayout from './layouts/DashboardLayout';
+import AuditHistory from './pages/Dashboard/AuditHistory';
+import DisputeCenter from './pages/Dashboard/DisputeCenter';
+import AgentSandbox from './pages/Dashboard/AgentSandbox';
+import Settings from './pages/Dashboard/Settings';
+import DecisionDetails from './pages/Dashboard/DecisionDetails';
+import './context/Web3Modal'; // Initialize Web3Modal
 
 function App() {
-  return <LandingPage />
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<AuthPage defaultMode="login" />} />
+        <Route path="/signup" element={<AuthPage defaultMode="signup" />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Dashboard />} />
+          <Route path="history" element={<AuditHistory />} />
+          <Route path="history/:id" element={<DecisionDetails />} />
+          <Route path="disputes" element={<DisputeCenter />} />
+          <Route path="sandbox" element={<AgentSandbox />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
