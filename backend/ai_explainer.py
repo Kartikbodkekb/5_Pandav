@@ -7,13 +7,15 @@ class AIExplainer:
     def __init__(self):
         try:
             self.llm = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash-lite",
+                model="gemini-2.5-flash-lite",  # Supported model, but subject to 20 RPM limit
                 google_api_key=settings.GOOGLE_API_KEY,
                 temperature=0.3
             )
+            print("AIExplainer initialized with gemini-2.5-flash-lite")
         except Exception as e:
             print(f"Failed to initialize AIExplainer: {e}")
             self.llm = None
+
 
     def explain_decision(self, decision: dict) -> dict:
         if not self.llm:

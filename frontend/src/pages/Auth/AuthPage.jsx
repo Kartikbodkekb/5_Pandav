@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signInWithPopup 
+  signInWithPopup,
+  onAuthStateChanged
 } from 'firebase/auth';
 import { auth, googleProvider } from '../../../firebase';
 import { Mail, Lock, User, Hexagon, ChevronLeft, BarChart3, ShieldAlert, Activity } from 'lucide-react';
@@ -18,6 +19,15 @@ export default function AuthPage({ defaultMode = 'login' }) {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        navigate('/dashboard');
+      }
+    });
+    return () => unsubscribe();
+  }, [navigate]);
 
   const toggleMode = () => {
     setMode(prev => prev === 'login' ? 'signup' : 'login');

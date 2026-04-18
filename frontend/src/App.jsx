@@ -7,7 +7,6 @@ import DashboardLayout from './layouts/DashboardLayout';
 import AuditHistory from './pages/Dashboard/AuditHistory';
 import DisputeCenter from './pages/Dashboard/DisputeCenter';
 import AgentSandbox from './pages/Dashboard/AgentSandbox';
-import Settings from './pages/Dashboard/Settings';
 import DecisionDetails from './pages/Dashboard/DecisionDetails';
 import './context/Web3Modal'; // Initialize Web3Modal
 
@@ -28,7 +27,6 @@ function App() {
           <Route path="history/:id" element={<DecisionDetails />} />
           <Route path="disputes" element={<DisputeCenter />} />
           <Route path="sandbox" element={<AgentSandbox />} />
-          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>
