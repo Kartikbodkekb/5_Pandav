@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import time
+import uuid
 from config import settings
 from blockchain import blockchain_service
 from ai_explainer import ai_explainer
@@ -15,6 +16,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+intents_db = {}
 
 @app.on_event("startup")
 async def startup_event():
@@ -181,3 +184,87 @@ def trigger_agent(req: MockAgentRequest):
         }
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+# --- INTENT LOGGER & VERIFICATION ---
+
+class SubmitIntentRequest(BaseModel):
+    action: str
+    reason: str
+    amount: int
+
+@app.post("/audit/submit-intent")
+def submit_intent(req: SubmitIntentRequest):
+    intent_data = {
+        "action": req.action,
+        "reason": req.reason,
+        "amount": req.amount,
+        "timestamp": int(time.time())
+    }
+    
+    # 1. Generate Explanation & Risk Score BEFORE it hits network
+    explanation_res = ai_explainer.explain_intent(intent_data)
+    
+    # 2. Store in memory
+    audit_id = str(uuid.uuid4())
+    intents_db[audit_id] = {
+        "audit_id": audit_id,
+        "action": req.action,
+        "reason": req.reason,
+        "amount": req.amount,
+        "explanation": explanation_res.get("explanation"),
+        "risk_score": explanation_res.get("risk_score"),
+        "status": "pending",
+        "tx_hash": None,
+        "submitted_at": intent_data["timestamp"]
+    }
+    
+    return intents_db[audit_id]
+
+@app.get("/audit/pending")
+def get_pending_intents():
+    pending = [intent for intent in intents_db.values() if intent["status"] == "pending"]
+    # Sort by newest first
+    pending.sort(key=lambda x: x["submitted_at"], reverse=True)
+    return {"pending_intents": pending, "total": len(pending)}
+
+class VerifyIntentRequest(BaseModel):
+    audit_id: str
+    verifier_address: str = ""
+
+@app.post("/audit/verify")
+def verify_intent(req: VerifyIntentRequest):
+    if req.audit_id not in intents_db:
+        raise HTTPException(status_code=404, detail="Intent not found")
+        
+    intent = intents_db[req.audit_id]
+    if intent["status"] != "pending":
+        raise HTTPException(status_code=400, detail=f"Intent already {intent['status']}")
+        
+    try:
+        # Trigger the actual execution on the HeLa blockchain!
+        explanation_hash = intent.get("explanation", "")[:32] # Mock hash
+        tx_hash = blockchain_service.log_decision(
+            action=intent["action"],
+            reason=intent["reason"],
+            amount=intent["amount"],
+            explanation_hash=explanation_hash,
+            private_key=settings.PRIVATE_KEY
+        )
+        
+        intent["status"] = "verified"
+        intent["tx_hash"] = tx_hash
+        intent["verified_by"] = req.verifier_address
+        intent["verified_at"] = int(time.time())
+        
+        return {
+            "success": True,
+            "message": "Intent verified and executed on HeLa network",
+            "audit_id": req.audit_id,
+            "tx_hash": tx_hash,
+            "hela_explorer_url": f"https://testnet-scan.helachain.com/tx/{tx_hash}"
+        }
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
