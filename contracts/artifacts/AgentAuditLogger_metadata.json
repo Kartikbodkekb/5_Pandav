@@ -1,0 +1,329 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "id",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "challenger",
+						"type": "address"
+					}
+				],
+				"name": "DecisionChallenged",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "id",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "action",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "agent",
+						"type": "address"
+					}
+				],
+				"name": "DecisionLogged",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "id",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "upheld",
+						"type": "bool"
+					}
+				],
+				"name": "DisputeResolved",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_id",
+						"type": "uint256"
+					}
+				],
+				"name": "challengeDecision",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_id",
+						"type": "uint256"
+					}
+				],
+				"name": "getDecision",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "id",
+								"type": "uint256"
+							},
+							{
+								"internalType": "string",
+								"name": "action",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "reason",
+								"type": "string"
+							},
+							{
+								"internalType": "uint256",
+								"name": "amount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "string",
+								"name": "explanationHash",
+								"type": "string"
+							},
+							{
+								"internalType": "uint256",
+								"name": "timestamp",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "agent",
+								"type": "address"
+							},
+							{
+								"internalType": "uint8",
+								"name": "status",
+								"type": "uint8"
+							},
+							{
+								"internalType": "bool",
+								"name": "disputed",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct AgentAuditLogger.Decision",
+						"name": "",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "governanceRole",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "_action",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "_reason",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "_explanationHash",
+						"type": "string"
+					}
+				],
+				"name": "logDecision",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_id",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "_upheld",
+						"type": "bool"
+					}
+				],
+				"name": "resolveDispute",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalDecisions",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_newGovernance",
+						"type": "address"
+					}
+				],
+				"name": "transferGovernance",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"details": "Protocol for transparent logging, explainability, and verification of decisions made by autonomous agents.",
+			"kind": "dev",
+			"methods": {
+				"challengeDecision(uint256)": {
+					"details": "Allows any user or governing body to challenge an agent's decision.",
+					"params": {
+						"_id": "The ID of the decision to challenge."
+					}
+				},
+				"constructor": {
+					"details": "Sets the deployer as the initial governance/DAO role."
+				},
+				"getDecision(uint256)": {
+					"details": "Retrieves the full details of a decision.",
+					"params": {
+						"_id": "The ID of the decision."
+					},
+					"returns": {
+						"_0": "The Decision struct containing all properties."
+					}
+				},
+				"logDecision(string,string,uint256,string)": {
+					"details": "Log a decision made by an autonomous agent.",
+					"params": {
+						"_action": "The action taken.",
+						"_amount": "Any numeric value or token amount associated with the decision.",
+						"_reason": "Human-readable explanation for the decision."
+					},
+					"returns": {
+						"_0": "id The unique ID of the logged decision."
+					}
+				},
+				"resolveDispute(uint256,bool)": {
+					"details": "Resolves a challenged decision. Only callable by the governance role.",
+					"params": {
+						"_id": "The ID of the decision.",
+						"_upheld": "True if the challenge was upheld (agent was wrong/overridden), false if rejected (agent was right)."
+					}
+				},
+				"transferGovernance(address)": {
+					"details": "Allows updating the governance role (e.g., transferring control to a DAO).",
+					"params": {
+						"_newGovernance": "The address of the new governance contract/wallet."
+					}
+				}
+			},
+			"title": "AgentAuditLogger",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"AgentAuditLogger.sol": "AgentAuditLogger"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"AgentAuditLogger.sol": {
+			"keccak256": "0x668b3fdd7b6a7acb1376cc90e8251939ed209c41f246c939cc07d027633881f1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6be1ca9357093bf177c0691de790c9aa0ce6444fae7b73a48d830c5ed6146002",
+				"dweb:/ipfs/QmTEsPac6U1CBrqNzLhAaHc3h1QqAvRBYaCVMm4ou26wRi"
+			]
+		}
+	},
+	"version": 1
+}

@@ -34,9 +34,9 @@ class BlockchainService:
                 raise HTTPException(status_code=404, detail={"error": "Decision not found"})
                 
             decision_data = self.contract.functions.getDecision(id).call()
-            # Struct: id, action, reason, amount, timestamp, agent, status, disputed
+            # Struct: id, action, reason, amount, explanationHash, timestamp, agent, status, disputed
             
-            d_id, action, reason, amount, timestamp, agent, status, disputed = decision_data
+            d_id, action, reason, amount, explanation_hash, timestamp, agent, status, disputed = decision_data
             
             status_labels = {0: "Pending", 1: "Challenged", 2: "Resolved"}
             status_label = status_labels.get(status, "Unknown")
@@ -49,6 +49,7 @@ class BlockchainService:
                 "action": action,
                 "reason": reason,
                 "amount": str(amount),
+                "explanation_hash": explanation_hash,
                 "timestamp": timestamp,
                 "agent": agent,
                 "status": status,
@@ -74,20 +75,22 @@ class BlockchainService:
         except Exception as e:
             raise HTTPException(status_code=503, detail={"error": "HeLa blockchain unreachable", "message": str(e)})
 
-    def log_decision(self, action: str, reason: str, amount: int, private_key: str) -> str:
+    def log_decision(self, action: str, reason: str, amount: int, explanation_hash: str, private_key: str) -> str:
         try:
             account = self.w3.eth.account.from_key(private_key)
             nonce = self.w3.eth.get_transaction_count(account.address)
             
-            tx = self.contract.functions.logDecision(action, reason, amount).build_transaction({
+            tx = self.contract.functions.logDecision(action, reason, amount, explanation_hash).build_transaction({
                 'from': account.address,
                 'nonce': nonce,
                 'gas': 500000,
-                'gasPrice': self.w3.eth.gas_price
+                'gasPrice': self.w3.to_wei('1', 'gwei')
             })
             
             signed_tx = self.w3.eth.account.sign_transaction(tx, private_key)
             tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            
+            self.w3.eth.wait_for_transaction_receipt(tx_hash)
             
             return self.w3.to_hex(tx_hash)
         except Exception as e:
