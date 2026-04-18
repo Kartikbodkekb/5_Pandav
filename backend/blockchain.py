@@ -78,7 +78,8 @@ class BlockchainService:
     def log_decision(self, action: str, reason: str, amount: int, explanation_hash: str, private_key: str) -> str:
         try:
             account = self.w3.eth.account.from_key(private_key)
-            nonce = self.w3.eth.get_transaction_count(account.address)
+            # Always fetch fresh 'pending' nonce to avoid conflicts on rapid submissions
+            nonce = self.w3.eth.get_transaction_count(account.address, 'pending')
             
             tx = self.contract.functions.logDecision(action, reason, amount, explanation_hash).build_transaction({
                 'from': account.address,
@@ -90,8 +91,9 @@ class BlockchainService:
             signed_tx = self.w3.eth.account.sign_transaction(tx, private_key)
             tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
             
-            self.w3.eth.wait_for_transaction_receipt(tx_hash)
-            
+            # Fire-and-forget: do NOT wait for receipt here.
+            # The tx is already broadcast to the mempool — return the hash immediately.
+            # The HeLa explorer will confirm it within seconds.
             return self.w3.to_hex(tx_hash)
         except Exception as e:
             raise HTTPException(status_code=503, detail={"error": "HeLa blockchain unreachable", "message": str(e)})
