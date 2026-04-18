@@ -12,15 +12,18 @@ const AgentSandbox = () => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const res = await fetch('http://localhost:8000/audit/submit-intent', {
+            const res = await fetch('http://127.0.0.1:8000/agent/trigger', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, reason, amount: parseInt(amount) || 0 })
+                body: JSON.stringify({ action, reason: "Context provided by sandbox", amount: parseInt(amount) || 0, explanation_hash: reason })
             });
             const data = await res.json();
-            setResult(data);
-            // Reset form
-            setAction(''); setReason(''); setAmount('');
+            if (!res.ok) {
+                setResult({ isError: true, detail: data.detail });
+            } else {
+                setResult(data);
+                setAction(''); setReason(''); setAmount('');
+            }
         } catch (err) {
             console.error(err);
         } finally {
@@ -71,11 +74,20 @@ const AgentSandbox = () => {
                     </button>
                 </form>
 
-                {result && (
+                {result && result.isError && (
+                    <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(255,0,0,0.05)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '8px' }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#ef4444' }}>Transaction Failed</h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#a0a0a0' }}>{result.detail?.error || 'Unknown Error'}</p>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#a0a0a0' }}>{result.detail?.message}</p>
+                    </div>
+                )}
+                
+                {result && !result.isError && (
                     <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(0,255,0,0.05)', border: '1px solid rgba(0,255,0,0.2)', borderRadius: '8px' }}>
-                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#4ade80' }}>Success! Intent Intercepted.</h4>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#a0a0a0' }}>Risk Score: <strong style={{color: '#fff'}}>{result.risk_score}/10</strong></p>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#a0a0a0' }}>Head to the Command Center to review it.</p>
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#4ade80' }}>Success! Intent Logged On-Chain.</h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#a0a0a0' }}>Tx Hash: <strong style={{color: '#fff'}}>{result.tx_hash}</strong></p>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#a0a0a0' }}>Head to the Audit History to review it.</p>
+                        <a href={result.hela_explorer_url} target="_blank" rel="noreferrer" style={{color: '#a855f7', display: 'block', marginTop: '0.5rem'}}>View on HeLa Explorer</a>
                     </div>
                 )}
             </div>
