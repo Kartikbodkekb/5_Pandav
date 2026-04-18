@@ -17,6 +17,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchPendingIntents();
+    // Auto-refresh every 10 seconds so new agent intents appear without manual reload
+    const interval = setInterval(fetchPendingIntents, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchPendingIntents = async () => {
@@ -82,7 +85,10 @@ export default function Dashboard() {
           <div className="empty-state glass-panel">
             <CheckCircle2 size={48} color="#4ade80" style={{ marginBottom: '1rem' }} />
             <h2>All Caught Up</h2>
-            <p>No pending intents require your attention at the moment.</p>
+            <p>No pending intents from agents right now.</p>
+            <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#a0a0a0' }}>
+              Go to <strong style={{ color: '#a855f7' }}>Agent Sandbox</strong> in the sidebar to submit a new agent decision for review.
+            </p>
           </div>
         ) : (
           <div className="intents-grid">

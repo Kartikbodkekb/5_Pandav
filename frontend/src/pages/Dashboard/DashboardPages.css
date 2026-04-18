@@ -1,7 +1,11 @@
 /* Shared Styling for all Dashboard Suite sub-pages */
 
 .page-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     animation: fadeIn 0.4s ease-out;
+    min-height: 0;
 }
 
 @keyframes fadeIn {
@@ -30,11 +34,27 @@
 
 /* Glass Cards */
 .glass-card {
-    background: rgba(15, 15, 20, 0.4);
+    background: rgba(15, 15, 20, 0.5);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 16px;
     padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+}
+
+/* Stat cards inside grids should not carry bottom margin */
+.stats-grid .glass-card {
+    margin-bottom: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
     margin-bottom: 1.5rem;
 }
 
