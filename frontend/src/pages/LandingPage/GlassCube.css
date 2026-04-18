@@ -29,6 +29,14 @@
   50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
 }
 
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .glass-cube-glow {
+    animation: none;
+    transform: translate(-50%, -50%);
+  }
+}
+
 @media (max-width: 1024px) {
   .glass-cube-container {
     min-height: 350px;

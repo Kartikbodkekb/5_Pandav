@@ -8,6 +8,7 @@ function AnimatedCounter({ value, prefix = '', suffix = '', decimals = 0 }) {
     let start = 0
     const duration = 2000
     const startTime = performance.now()
+    let rafId
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime
@@ -18,10 +19,12 @@ function AnimatedCounter({ value, prefix = '', suffix = '', decimals = 0 }) {
       setCount(start)
 
       if (progress < 1) {
-        requestAnimationFrame(animate)
+        rafId = requestAnimationFrame(animate)
       }
     }
-    requestAnimationFrame(animate)
+    rafId = requestAnimationFrame(animate)
+
+    return () => cancelAnimationFrame(rafId)
   }, [value])
 
   return (

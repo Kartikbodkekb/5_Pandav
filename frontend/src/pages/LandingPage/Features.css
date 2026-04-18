@@ -23,13 +23,19 @@
   gap: 60px;
 }
 
+/* Visible by default; JS adds .features__hidden first, then swaps to .features__visible */
 .features__header {
-  opacity: 0;
   transform: translateY(30px);
-  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.features.features__visible .features__header {
+/* JS initially adds this class to trigger animation */
+.features__header.features__hidden {
+  opacity: 0;
+}
+
+.features__header.features__visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -71,7 +77,11 @@
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Only transition the properties we actually animate */
+  transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Active State (Hover/Default Expanded) */
@@ -79,6 +89,13 @@
   background: var(--accent);
   border-color: transparent;
   transform: scale(1.02);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Keyboard focus indicator */
+.features__card:focus-visible {
+  outline: 2px solid var(--accent-light);
+  outline-offset: 3px;
   box-shadow: var(--shadow-glow);
 }
 
@@ -114,7 +131,9 @@
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Only transition the properties that actually animate */
+  transition: grid-template-rows 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .features__card--active .features__card-body {
@@ -148,6 +167,29 @@
   color: var(--text-primary);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+/* Tools Grid */
+.features__card-tools {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.features__card-tool {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono, monospace);
+}
+
+.features__card-tool svg {
+  color: var(--accent-light);
 }
 
 /* Responsive */

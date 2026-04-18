@@ -16,6 +16,7 @@ export default function Navbar() {
       setScrolled(window.scrollY > 50)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // Set initial state based on current scroll position
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -54,6 +55,7 @@ export default function Navbar() {
           className={`navbar__hamburger ${mobileOpen ? 'navbar__hamburger--open' : ''}`}
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle navigation menu"
+          aria-expanded={mobileOpen}
           id="nav-toggle"
         >
           <span />

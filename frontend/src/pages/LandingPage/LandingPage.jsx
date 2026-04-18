@@ -1,7 +1,10 @@
 import Navbar from './Navbar'
 import Hero from './Hero'
+import Marquee from './Marquee'
 import Features from './Features'
+import TrustBar from './TrustBar'
 import HowItWorks from './HowItWorks'
+import UseCases from './UseCases'
 import Architecture from './Architecture'
 import Footer from './Footer'
 import DotNav from './DotNav'
@@ -16,8 +19,11 @@ export default function LandingPage() {
       <div className="content-layer">
         <Navbar />
         <Hero />
+        <Marquee />
         <Features />
+        <TrustBar />
         <HowItWorks />
+        <UseCases />
         <Architecture />
         <Footer />
         <DotNav />

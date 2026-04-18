@@ -78,7 +78,7 @@ export default function Architecture() {
       { threshold: 0.1 }
     )
 
-    const items = sectionRef.current?.querySelectorAll('.arch__layer, .arch__header')
+    const items = sectionRef.current?.querySelectorAll('.arch__layer, .arch__header, .arch__metrics')
     items?.forEach((item) => observer.observe(item))
 
     return () => observer.disconnect()
@@ -87,41 +87,68 @@ export default function Architecture() {
   return (
     <section className="arch" id="architecture" ref={sectionRef}>
       <div className="arch__inner container">
-        <div className="arch__header">
-          <h2 className="arch__title">
-            Architecture <span className="arch__title-serif">Overview</span>
-          </h2>
-          <p className="arch__subtitle">
-            A modular, layered protocol stack designed for scalability,
-            security, and seamless integration with any autonomous agent framework.
-          </p>
-        </div>
+        {/* Left column empty for 3D shape */}
+        <div className="arch__visual-col"></div>
 
-        <div className="arch__stack">
-          {layers.map((layer, index) => (
-            <div key={index} className="arch__layer-wrapper">
-              <div
-                className="arch__layer"
-                style={{ transitionDelay: `${index * 0.1}s` }}
-              >
-                <div className="arch__layer-icon">{layer.icon}</div>
-                <div className="arch__layer-content">
-                  <h3 className="arch__layer-title">{layer.title}</h3>
-                  <p className="arch__layer-desc">{layer.description}</p>
+        <div className="arch__content-col">
+          <div className="arch__header">
+            <h2 className="arch__title">
+              Architecture <span className="arch__title-serif">Overview</span>
+            </h2>
+            <p className="arch__subtitle">
+              A modular, layered protocol stack designed for scalability,
+              security, and seamless integration with any autonomous agent framework.
+            </p>
+          </div>
+
+          <div className="arch__stack">
+            {layers.map((layer, index) => (
+              <div key={index} className="arch__layer-wrapper">
+                <div
+                  className="arch__layer"
+                  style={{ transitionDelay: `${index * 0.1}s` }}
+                >
+                  <div className="arch__layer-icon">{layer.icon}</div>
+                  <div className="arch__layer-content">
+                    <h3 className="arch__layer-title">{layer.title}</h3>
+                    <p className="arch__layer-desc">{layer.description}</p>
+                  </div>
+                  <div className="arch__layer-index">
+                    {String(index + 1).padStart(2, '0')}
+                  </div>
                 </div>
-                <div className="arch__layer-index">
-                  {String(index + 1).padStart(2, '0')}
-                </div>
+                {index < layers.length - 1 && (
+                  <div className="arch__connector">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 5v14M5 12l7 7 7-7" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
+                    </svg>
+                  </div>
+                )}
               </div>
-              {index < layers.length - 1 && (
-                <div className="arch__connector">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 5v14M5 12l7 7 7-7" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
-                  </svg>
-                </div>
-              )}
+            ))}
+          </div>
+
+          <div className="arch__metrics">
+            <h3 className="arch__metrics-title">Core Protocol Metrics</h3>
+            <div className="arch__metrics-grid">
+              <div className="arch__metric-card">
+                <div className="arch__metric-val">150K+</div>
+                <div className="arch__metric-label">Lines of Code</div>
+              </div>
+              <div className="arch__metric-card">
+                <div className="arch__metric-val">98%</div>
+                <div className="arch__metric-label">Test Coverage</div>
+              </div>
+              <div className="arch__metric-card">
+                <div className="arch__metric-val">Passed</div>
+                <div className="arch__metric-label">CertiK Audit</div>
+              </div>
+              <div className="arch__metric-card">
+                <div className="arch__metric-val">100%</div>
+                <div className="arch__metric-label">Open Source</div>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </section>
