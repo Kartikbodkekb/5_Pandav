@@ -99,6 +99,29 @@ class BlockchainService:
         except Exception as e:
             raise HTTPException(status_code=503, detail={"error": "HeLa blockchain unreachable", "message": str(e)})
 
+    def resolve_dispute(self, decision_id: int, upheld: bool) -> str:
+        """
+        Call resolveDispute(id, upheld) on-chain using the governance private key.
+        upheld=True  => challenge valid, agent penalised  (-50 reputation)
+        upheld=False => challenge invalid, agent rewarded (+10 reputation)
+        """
+        try:
+            account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
+            nonce = self.w3.eth.get_transaction_count(account.address, 'pending')
+
+            tx = self.contract.functions.resolveDispute(decision_id, upheld).build_transaction({
+                'from': account.address,
+                'nonce': nonce,
+                'gas': 300000,
+                'gasPrice': self.w3.eth.gas_price,
+            })
+
+            signed_tx = self.w3.eth.account.sign_transaction(tx, settings.PRIVATE_KEY)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            return self.w3.to_hex(tx_hash)
+        except Exception as e:
+            raise HTTPException(status_code=503, detail={"error": "resolveDispute failed", "message": str(e)})
+
     def get_chain_info(self) -> dict:
         try:
             return {

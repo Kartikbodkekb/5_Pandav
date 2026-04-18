@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import time
@@ -17,7 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-intents_db = {}
+intents_db = {}           # Pending intent queue (Command Center)
+review_results = {}       # LLM tribunal results keyed by decision_id
 
 @app.on_event("startup")
 async def startup_event():
@@ -86,12 +87,45 @@ def get_decision(id: int):
 class BatchRequest(BaseModel):
     ids: list[int]
 
+@app.get("/explain/all")
+def explain_all_decisions():
+    """
+    Return risk scores for ALL on-chain decisions in one call.
+    Results are served from cache (no LLM call) when already computed.
+    Only uncached decisions will trigger LLM calls (rate-limited, sequential).
+    """
+    from ai_explainer import _explain_cache
+    try:
+        decisions = blockchain_service.get_all_decisions()
+        results = []
+        for d in decisions:
+            d_id = d.get("id")
+            if d_id in _explain_cache:
+                # Serve from cache — no LLM call
+                cached = _explain_cache[d_id]
+                results.append({
+                    "decision_id": d_id,
+                    "risk": cached.get("risk"),
+                    "should_challenge": cached.get("should_challenge"),
+                    "cached": True,
+                })
+            else:
+                # Queue for lazy loading — return null so frontend shows spinner
+                results.append({
+                    "decision_id": d_id,
+                    "risk": None,
+                    "should_challenge": None,
+                    "cached": False,
+                })
+        return {"results": results, "total": len(results)}
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
 @app.get("/explain/{id}")
 def explain_decision_endpoint(id: int):
     try:
         decision = blockchain_service.get_decision(id)
         explanation = ai_explainer.explain_decision(decision)
-        
         return {
             "decision_id": id,
             "decision": decision,
@@ -99,6 +133,7 @@ def explain_decision_endpoint(id: int):
             "summary": explanation.get("summary"),
             "risk": explanation.get("risk"),
             "should_challenge": explanation.get("should_challenge"),
+            "cached": False,  # LLM was directly called
             "model_used": explanation.get("model_used")
         }
     except HTTPException as e:
@@ -106,6 +141,7 @@ def explain_decision_endpoint(id: int):
 
 @app.post("/explain/batch")
 def explain_batch_endpoint(req: BatchRequest):
+    """Explain a batch of decisions sequentially (rate-limited, cached)."""
     decisions = []
     for d_id in req.ids:
         try:
@@ -113,47 +149,157 @@ def explain_batch_endpoint(req: BatchRequest):
             decisions.append(d)
         except Exception:
             pass
-            
     explanations = ai_explainer.explain_batch(decisions)
     return explanations
 
-# --- CHALLENGE ---
+@app.delete("/explain/cache")
+def clear_explain_cache():
+    """Clear the LLM explanation cache (admin use)."""
+    from ai_explainer import _explain_cache, _review_cache
+    n = len(_explain_cache) + len(_review_cache)
+    _explain_cache.clear()
+    _review_cache.clear()
+    return {"cleared": n, "message": "Caches cleared"}
+
+# --- CHALLENGE + LLM REVIEW ---
+
+# In-progress challenge state store: { decision_id: "pending" | "reviewing" | result_dict }
 
 class ChallengeRequest(BaseModel):
-    challenger_address: str
+    challenger_address: str = ""
+
+
+def _background_llm_review(decision_id: int, decision: dict):
+    """
+    Run after a successful challengeDecision tx.
+    1. Asks Gemini tribunal to UPHOLD or REJECT the challenge.
+    2. Calls resolveDispute(id, upheld) on-chain → adjusts agent reputation.
+    3. Stores result in review_results for the frontend to poll.
+    """
+    import time as _time
+    print(f"[Tribunal] Starting LLM review for Decision #{decision_id}...")
+    review_results[decision_id] = {"status": "reviewing", "decision_id": decision_id}
+
+    try:
+        verdict = ai_explainer.review_challenge(decision)
+        upheld = verdict.get("upheld", False)
+
+        # Resolve dispute on-chain → this adjusts agentReputations in the smart contract
+        resolve_tx = blockchain_service.resolve_dispute(decision_id, upheld)
+        print(f"[Tribunal] resolveDispute tx: {resolve_tx}")
+
+        # Fetch updated reputation
+        agent_name = decision.get("agentName", "")
+        new_reputation = None
+        try:
+            new_reputation = int(blockchain_service.contract.functions.getReputation(agent_name).call())
+        except Exception:
+            pass
+
+        result = {
+            "status": "complete",
+            "decision_id": decision_id,
+            "agent_name": agent_name,
+            "verdict": verdict.get("verdict"),
+            "upheld": upheld,
+            "confidence": verdict.get("confidence"),
+            "reasoning": verdict.get("reasoning"),
+            "reputation_delta": verdict.get("reputation_delta"),
+            "reputation_impact_text": verdict.get("reputation_impact_text"),
+            "new_reputation": new_reputation,
+            "resolve_tx_hash": resolve_tx,
+            "resolve_explorer_url": f"https://testnet-blockexplorer.helachain.com/tx/{resolve_tx}",
+            "model_used": verdict.get("model_used"),
+            "full_llm_response": verdict.get("full_response"),
+        }
+        review_results[decision_id] = result
+        print(f"[Tribunal] Decision #{decision_id} verdict={verdict.get('verdict')}, reputation_delta={verdict.get('reputation_delta')}")
+
+    except Exception as e:
+        print(f"[Tribunal ERROR] Decision #{decision_id}: {e}")
+        review_results[decision_id] = {
+            "status": "error",
+            "decision_id": decision_id,
+            "error": str(e)
+        }
+
 
 @app.post("/challenge/{id}")
-def challenge_decision_endpoint(id: int, req: ChallengeRequest):
+def challenge_decision_endpoint(id: int, req: ChallengeRequest, background_tasks: BackgroundTasks):
+    """
+    1. Submits challengeDecision(id) on-chain (governance key).
+    2. Kicks off background LLM tribunal review.
+    3. Returns immediately with tx_hash — frontend polls GET /review/{id} for the verdict.
+    """
     try:
         decision = blockchain_service.get_decision(id)
+
         if not decision.get("is_challengeable"):
-            # Check if expired
             current_time = int(time.time())
-            expired_at = decision.get("timestamp") + settings.CHALLENGE_WINDOW_SECONDS
+            expired_at = decision.get("timestamp", 0) + settings.CHALLENGE_WINDOW_SECONDS
             if current_time > expired_at:
-                raise HTTPException(status_code=400, detail={"error": "Challenge window closed", "expired_at": expired_at})
+                raise HTTPException(
+                    status_code=400,
+                    detail={"error": "Challenge window closed", "expired_at": expired_at}
+                )
             else:
-                raise HTTPException(status_code=400, detail=f"Decision not challengeable. Status is {decision.get('status_label')}")
-                
-        # Access abi directly from disk to prevent Web3.py serialization errors
-        import json
-        with open("abi.json", "r") as f:
-            abi = json.load(f)
-        
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Decision not challengeable. Current status: {decision.get('status_label')}"
+                )
+
+        # Submit the challenge on-chain
+        w3 = blockchain_service.w3
+        account = w3.eth.account.from_key(settings.PRIVATE_KEY)
+        nonce = w3.eth.get_transaction_count(account.address, 'pending')
+
+        tx = blockchain_service.contract.functions.challengeDecision(id).build_transaction({
+            'from': account.address,
+            'nonce': nonce,
+            'gas': 300000,
+            'gasPrice': w3.eth.gas_price,
+        })
+
+        signed_tx = w3.eth.account.sign_transaction(tx, settings.PRIVATE_KEY)
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        tx_hash_hex = w3.to_hex(tx_hash)
+        print(f"[Challenge] Decision #{id} challenged. TxHash: {tx_hash_hex}")
+
+        # Mark review as pending immediately so frontend can start polling
+        review_results[id] = {"status": "pending", "decision_id": id}
+
+        # Fire background LLM review (non-blocking)
+        background_tasks.add_task(_background_llm_review, id, decision)
+
         return {
-            "challengeable": True,
-            "message": "Send transaction via MetaMask to challenge",
-            "decision": decision,
-            "contract_address": settings.CONTRACT_ADDRESS,
-            "abi": abi,
-            "function": "challengeDecision",
-            "args": [id]
+            "success": True,
+            "message": f"Decision #{id} challenged on HeLa. LLM tribunal review started.",
+            "tx_hash": tx_hash_hex,
+            "decision_id": id,
+            "challenger": req.challenger_address or account.address,
+            "review_url": f"/review/{id}",
+            "hela_explorer_url": f"https://testnet-blockexplorer.helachain.com/tx/{tx_hash_hex}"
         }
-    except HTTPException as e:
-        # Avoid double-wrapping HTTPException
-        if isinstance(e, HTTPException):
-            raise
-        raise HTTPException(status_code=400, detail=str(e))
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Challenge ERROR] {e}")
+        raise HTTPException(status_code=500, detail={"error": "Challenge transaction failed", "message": str(e)})
+
+
+@app.get("/review/{id}")
+def get_review_result(id: int):
+    """
+    Poll endpoint for LLM tribunal result.
+    Returns status: 'pending' | 'reviewing' | 'complete' | 'error'
+    """
+    result = review_results.get(id)
+    if not result:
+        # Maybe the challenge hasn't been submitted yet
+        raise HTTPException(status_code=404, detail=f"No review found for Decision #{id}")
+    return result
+
 
 @app.get("/challenge/{id}/status")
 def get_challenge_status(id: int):
@@ -162,14 +308,13 @@ def get_challenge_status(id: int):
         current_time = int(time.time())
         expired_at = decision.get("timestamp") + settings.CHALLENGE_WINDOW_SECONDS
         time_remaining = max(0, expired_at - current_time) if decision.get("status") == 0 else 0
-        
+
         return {
             "decision_id": id,
             "status": decision.get("status"),
             "status_label": decision.get("status_label"),
             "is_challengeable": decision.get("is_challengeable"),
             "time_remaining_seconds": time_remaining,
-            "challenged_at": None # We don't track challenged_at in the struct currently
         }
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -401,7 +546,7 @@ async def _run_single_agent(agent_name: str, profile: dict) -> dict:
             "message": "Queued for human review (high risk)"
         })
 
-    print(f"[{agent_name}] Risk: {risk_score}/10 → {result['status']}")
+    print(f"[{agent_name}] Risk: {risk_score}/10 -> {result['status']}")
     return result
 
 
