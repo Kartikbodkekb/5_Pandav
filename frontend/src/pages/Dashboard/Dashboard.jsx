@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, ShieldAlert, CheckCircle2, ChevronRight, Activity, Clock, Server, RefreshCw, AlertTriangle, Zap, Cpu } from 'lucide-react';
-import { useWeb3ModalAccount } from '@web3modal/ethers/react';
+import { useWeb3Context } from '../../context/Web3Context';
 import { useToast } from '../../components/Toast';
 import { PageHeader } from '../../components/PageHeader';
 import { StatCard } from '../../components/StatCard';
@@ -16,8 +16,10 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const toast = useToast();
   
-  // Web3Modal Hooks
-  const { isConnected } = useWeb3ModalAccount();
+  // Native Web3 Context
+  const { address, isConnected } = useWeb3Context();
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPendingIntents();

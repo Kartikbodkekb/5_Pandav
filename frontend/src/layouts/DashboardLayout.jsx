@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { auth } from '../../firebase';
 import { signOut } from 'firebase/auth';
-import { useWeb3Modal, useWeb3ModalAccount, useDisconnect } from '@web3modal/ethers/react';
+import { useWeb3Context } from '../context/Web3Context';
 import { ShieldCheck, Zap, Scroll, Scale, FlaskConical, Menu, X, LogOut, ChevronDown, Copy } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import './DashboardLayout.css';
@@ -23,9 +23,7 @@ const routeTitles = {
 };
 
 export default function DashboardLayout() {
-  const { open } = useWeb3Modal();
-  const { address, isConnected } = useWeb3ModalAccount();
-  const { disconnect } = useDisconnect();
+  const { address, isConnected, connect, disconnect } = useWeb3Context();
   const toast = useToast();
   
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -198,7 +196,7 @@ export default function DashboardLayout() {
                       )}
                     </div>
                   ) : (
-                    <button className="wallet-btn connect-btn hover-lift" onClick={() => open()}>
+                    <button className="wallet-btn connect-btn hover-lift" onClick={() => connect()}>
                       Connect Wallet
                     </button>
                   )}

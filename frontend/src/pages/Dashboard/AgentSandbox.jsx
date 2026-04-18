@@ -15,9 +15,17 @@ const STATUS_CONFIG = {
 const AgentSandbox = () => {
     const navigate = useNavigate();
     const [profiles, setProfiles] = useState([]);
+    const [reputations, setReputations] = useState([]);
     const [isRunning, setIsRunning] = useState(false);
     const [results, setResults] = useState(null);
     const toast = useToast();
+
+    const fetchReputation = () => {
+        fetch('http://localhost:8000/reputation')
+            .then(r => r.json())
+            .then(data => setReputations(data.leaderboard || []))
+            .catch(console.error);
+    };
 
     // Load agent profiles on mount
     useEffect(() => {
@@ -25,6 +33,8 @@ const AgentSandbox = () => {
             .then(r => r.json())
             .then(data => setProfiles(data.agents || []))
             .catch(err => console.error("Failed to fetch profiles", err));
+            
+        fetchReputation();
     }, []);
 
     const handleRunAgents = async () => {
@@ -37,6 +47,7 @@ const AgentSandbox = () => {
             const data = await res.json();
             setResults(data);
             toast.success("Simulation Complete", "Agents have executed their decisions.");
+            fetchReputation(); // Refresh reputation after runs
         } catch (err) {
             toast.error("Simulation Failed", err.message);
         } finally {
@@ -95,6 +106,7 @@ const AgentSandbox = () => {
                                 <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Queued for Command Center</span>
                             </div>
                         </div>
+
                     </div>
 
                     <h3 style={{ fontSize: '16px', fontWeight: 600, margin: '24px 0 16px' }}>Active Agents</h3>
@@ -104,9 +116,21 @@ const AgentSandbox = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.05)' }}>
                                     <Bot size={20} className="text-accent-light" />
                                 </div>
-                                <div>
+                                <div style={{ flex: 1 }}>
                                     <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{agent.name}</div>
                                     <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{agent.description}</div>
+                                    {reputations.find(r => r.name === agent.name) && (
+                                        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ color: '#a0a0a0', fontSize: '0.78rem' }}>On-Chain Reputation</span>
+                                            <span style={{ 
+                                                fontWeight: 'bold', 
+                                                color: reputations.find(r => r.name === agent.name).reputation >= 100 ? '#4ade80' : 
+                                                       reputations.find(r => r.name === agent.name).reputation >= 50 ? '#f59e0b' : '#ef4444' 
+                                            }}>
+                                                {reputations.find(r => r.name === agent.name).reputation} pts
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}

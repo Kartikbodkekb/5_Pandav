@@ -77,7 +77,7 @@ const DecisionDetails = () => {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-muted)' }}>Risk Score</span>
-                                <RiskBadge score={decision?.risk_score || 1} size="sm" />
+                                <RiskBadge score={details?.risk || 1} size="sm" />
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-muted)' }}>Status</span>
@@ -89,7 +89,7 @@ const DecisionDetails = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ color: 'var(--text-muted)' }}>Agent Wallet</span>
                                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px' }}>
-                                    {decision?.agent_address || "0xAgent..."}
+                                    {decision?.agent || "0xAgent..."}
                                 </span>
                             </div>
                         </div>
@@ -112,7 +112,7 @@ const DecisionDetails = () => {
                         <div style={{ marginBottom: '20px' }}>
                             <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-light)', marginBottom: '8px' }}>Executive Summary</h4>
                             <p style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-primary)' }}>
-                                {details?.explanation_text || "The AI model evaluated the agent's intent based on historical trading volumes, market volatility, and hard-coded risk parameters within the TAAP smart contract."}
+                                {details?.explanation || "The AI model evaluated the agent's intent based on historical trading volumes, market volatility, and hard-coded risk parameters within the TAAP smart contract."}
                             </p>
                         </div>
                         
