@@ -15,8 +15,9 @@ TAAP is a comprehensive "Command Center" dashboard that ensures safe execution o
 - Generate a Risk Score (0-10) and translate the machine intent into human-readable rationale.
 - Map and securely broadcast the final approved agent intent to the HeLa Testnet via Web3/Ethers.
 - Allow Guardians community members 24 hours to aggressively freeze or challenge the agent's logic on-chain.
+- Automatically resolve disputes using an AI Tribunal that adjusts agent reputation scores based on verdicts.
 
-The application uses Google Gemini 2.5 Flash-Lite to understand the context of the agent's intended action and ensure humans remain firmly in the loop before money moves.
+The application uses Google Gemini 2.5 Flash to understand the context of the agent's intended action and ensure humans remain firmly in the loop before money moves, while handling background tribunal reviews for challenged decisions.
 
 ### Target Users
 
@@ -29,8 +30,9 @@ The application uses Google Gemini 2.5 Flash-Lite to understand the context of t
 
 - **Intent Interception**: Stops an AI script from executing blindly by freezing the transaction off-chain.
 - **AI-Powered Risk Scoring**: Uses advanced LLM technology to dynamically catch potential exploits.
-- **One-Click Web3 Verification**: Simple approval workflow using Web3Modal and browser wallets.
+- **One-Click Web3 Verification**: Simple approval workflow using browser wallets.
 - **Immutable Audit Trails**: Every decision is cryptographically locked into the HeLa Testnet for total transparency.
+- **Autonomous Dispute Resolution**: Background AI Tribunal automatically reviews challenged decisions and adjusts on-chain agent reputation.
 - **Easy to Use**: A gorgeous glassmorphism UI offering a complete Sandbox and Dispute suite.
 
 ---
@@ -80,8 +82,8 @@ The application uses Google Gemini 2.5 Flash-Lite to understand the context of t
 - Deep-dive dashboard to review pending AI intents.
 - Cryptographic execution of verified decisions to the HeLa blockchain.
 - Master Audit Log to view historical executed transactions with explorer links.
-- Dispute Center UI for freezing malicious AI decisions within 24 hours.
-- Agent Sandbox UI to manually inject decision tests directly from the browser.
+- Dispute Center UI with live countdowns and automated Gemini AI Tribunal for resolving challenged decisions on-chain.
+- Agent Sandbox UI to manually inject decision tests directly from the browser, with real-time reputation tracking.
 - Python mock toolkit (`populate_dashboard.py` and `mock_agent.py`) for developers.
 
 ---
@@ -145,15 +147,18 @@ The application uses Google Gemini 2.5 Flash-Lite to understand the context of t
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| `GET`  | `/explain/all` | Fetches risk scores for all decisions in a single cached call |
 | `GET`  | `/explain/{id}` | Analyzes a historical executed decision |
-| `POST` | `/explain/batch` | Analyzes multiple historical decisions simultaneously |
+| `POST` | `/explain/batch` | Analyzes multiple historical decisions sequentially |
+| `DELETE` | `/explain/cache` | Clears the backend LLM result caches |
 
 ### DAO Dispute Logic (`/challenge`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET`  | `/challenge/{id}/status` | Check if a decision's 24hr timelock has expired |
-| `POST` | `/challenge/{id}` | Formulate args to freeze a smart-contract payload |
+| `GET`  | `/challenge/{id}/status` | Check if a decision's timelock has expired |
+| `POST` | `/challenge/{id}` | Formulate args to freeze a smart-contract payload and kick off AI Tribunal |
+| `GET`  | `/review/{id}` | Poll endpoint for the background AI Tribunal verdict |
 
 ---
 
@@ -227,13 +232,16 @@ The application uses Google Gemini 2.5 Flash-Lite to understand the context of t
 
 3. **Create `.env` file:**
    ```env
-   VITE_WALLETCONNECT_PROJECT_ID=your_project_id_here
    VITE_FIREBASE_API_KEY=your_firebase_api_key
    VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
    VITE_FIREBASE_PROJECT_ID=your_project_id
    ```
 
-4. **Run the development server:**
+4. **Install Metamask Wallet in Browser:**
+   - Go to https://metamask.io/ 
+   - Follow instructions on website to add wallet as extension
+   
+5. **Run the development server:**
    ```bash
    npm run dev
    ```
@@ -260,6 +268,8 @@ The application uses Google Gemini 2.5 Flash-Lite to understand the context of t
 ### 4. Dispute Center (DAO Control)
 - Navigate to the **Dispute Center**.
 - Any recent action that has been approved shows up here for a 24hr window. DAOs can aggressively challenge these items to revert state if logic was flawed.
+- Challenging a decision triggers a backend-signed transaction on the HeLa network, and immediately initiates a background Gemini AI Tribunal.
+- The Tribunal will review the challenge, deliver an UPHELD or REJECTED verdict, and automatically adjust the agent's on-chain reputation score.
 
 ---
 
@@ -278,14 +288,16 @@ The application uses Google Gemini 2.5 Flash-Lite to understand the context of t
 - [x] Explainability details render flawlessly on UI
 
 ### ✅ Web3 Execution
-- [x] Web3Modal correctly connects via MetaMask or TrustWallet (QR scan)
-- [x] Backend Formulates Raw Transactions using local Private Keys
+- [x] Web3 correctly connects via injected browser wallets (MetaMask)
+- [x] Backend Formulates Raw Transactions using local Private Keys for Governance functions
 - [x] Web3 execution commits properly to HeLa node RPC
-- [x] Explorer Links dynamically map to testnet-scan.helachain.com
+- [x] Explorer Links dynamically map to testnet-blockexplorer.helachain.com
 
 ### ✅ Dispute Analytics
-- [x] 24hr Timelock dynamically recognized by Backend logic
-- [x] DAO Dashboard flags transactions nearing deadline
+- [x] Timelocks dynamically recognized by Backend logic
+- [x] DAO Dashboard flags transactions nearing deadline with live countdowns
+- [x] AI Tribunal correctly parses challenges and evaluates UPHELD/REJECTED verdicts
+- [x] Backend automatically executes `resolveDispute` to alter Agent Reputation scores
 
 
 ---
